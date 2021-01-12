@@ -15,11 +15,23 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
+  List<String> _log = [];
+  KeyboardEvent keyboardEvent;
 
   @override
   void initState() {
     super.initState();
     initPlatformState();
+    keyboardEvent = KeyboardEvent(
+      onLog: (str) => setState(() {
+        if (str == 'Enter')
+          _log.last += '\n';
+        else if (str == 'Backspace') //
+          _log.removeLast();
+        else
+          _log.add(str);
+      }),
+    );
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -50,7 +62,7 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: Text('Running on: $_platformVersion\n$_log'),
         ),
       ),
     );
