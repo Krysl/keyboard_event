@@ -16,64 +16,40 @@
 #include <sstream>
 
 #include "debug.h"
+#include "keyboard_event.h"
 #include "keyboard_event_plugin.h"
 
 HHOOK kbdhook;
-const char kOnLogCallbackMethod[] = "onLog";
-
-LRESULT CALLBACK LLKeyboardProc(int nCode, WPARAM wp, LPARAM lp);
 
 namespace {
+std::unique_ptr<flutter::MethodChannel<>> channel = NULL;
 
 class KeyboardEventPlugin : public flutter::Plugin {
  public:
   static void RegisterWithRegistrar(flutter::PluginRegistrarWindows *registrar);
-  static std::unique_ptr<flutter::MethodChannel<>> channel_;
-  void showText(LPCTSTR text);
+  static void showText(LPCTSTR text);
 
-  // KeyboardEventPlugin(const KeyboardEventPlugin &) = delete;
-  // KeyboardEventPlugin &operator=(const KeyboardEventPlugin &) = delete;
-
-  /**
-   * @brief Get the instance object
-   * Meyers' Singleton.
-   * https://www.cnblogs.com/sunchaothu/p/10389842.html
-   * @param channel
-   * @return KeyboardEventPlugin&
-   */
-  static KeyboardEventPlugin &get_instance() {
-    static auto instance = KeyboardEventPlugin();
-    return instance;
-  }
-
+  KeyboardEventPlugin();
   virtual ~KeyboardEventPlugin();
 
  private:
-  KeyboardEventPlugin();
   // Called when a method is called on this plugin's channel from Dart.
   void HandleMethodCall(
       const flutter::MethodCall<flutter::EncodableValue> &method_call,
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
+  static const char kOnLogCallbackMethod[];
 };
 
-std::unique_ptr<flutter::MethodChannel<>> KeyboardEventPlugin::channel_ = NULL;
+const char KeyboardEventPlugin::kOnLogCallbackMethod[] = "onLog";
 
 // static
 void KeyboardEventPlugin::RegisterWithRegistrar(
     flutter::PluginRegistrarWindows *registrar) {
-  // auto channel =
-  //     std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
-  //         registrar->messenger(), "keyboard_event",
-  //         &flutter::StandardMethodCodec::GetInstance());
-
-  KeyboardEventPlugin::channel_ =
-      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
-          registrar->messenger(), "keyboard_event",
-          &flutter::StandardMethodCodec::GetInstance());
-  KeyboardEventPlugin *_plugin = &KeyboardEventPlugin::get_instance();
-  auto plugin = std::unique_ptr<KeyboardEventPlugin>(_plugin);
-  auto *channel_pointer = KeyboardEventPlugin::channel_.get();
-  channel_pointer->SetMethodCallHandler(
+  channel = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+      registrar->messenger(), "keyboard_event",
+      &flutter::StandardMethodCodec::GetInstance());
+  auto plugin = std::make_unique<KeyboardEventPlugin>();
+  channel->SetMethodCallHandler(
       [plugin_pointer = plugin.get()](const auto &call, auto result) {
         plugin_pointer->HandleMethodCall(call, std::move(result));
       });
@@ -82,29 +58,18 @@ void KeyboardEventPlugin::RegisterWithRegistrar(
 }
 
 KeyboardEventPlugin::KeyboardEventPlugin() {
-  // HMODULE hInstance = GetModuleHandle(nullptr);
-  // kbdhook = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInstance, NULL);
+  HMODULE hInstance = GetModuleHandle(nullptr);
+  kbdhook = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInstance, NULL);
   // KeyboardEventPlugin::channel_ = std::move(channel);
 #ifdef _DEBUG
-  TCHAR iniFile[MAX_PATH];
-  GetModuleFileName(NULL, iniFile, MAX_PATH);
-  iniFile[wcslen(iniFile) - 4] = '\0';
-  wcscat_s(iniFile, MAX_PATH, L".ini");
-  wcscpy_s(logFile, MAX_PATH, iniFile);
-  logFile[wcslen(logFile) - 4] = '\0';
-  wcscat_s(logFile, MAX_PATH, L".txt");
-  errno_t err = _wfopen_s(&logStream, logFile, L"a");
-  if (err) {
-    MessageBox(NULL, TEXT("can't open log file"), TEXT("Warnning!"), MB_OK);
-  }
+  log_init(NULL);
 #endif
 }
 
 KeyboardEventPlugin::~KeyboardEventPlugin() {
-  // UnhookWindowsHookEx(kbdhook);
-  KeyboardEventPlugin::channel_.reset();
+  UnhookWindowsHookEx(kbdhook);
 #ifdef _DEBUG
-  fclose(logStream);
+  if (logStream) fclose(logStream);
 #endif
 }
 
@@ -164,7 +129,8 @@ void KeyboardEventPlugin::showText(LPCTSTR text) {
   line << text << "\n";
   log(line);
 #endif
-  auto *channel_pointer = KeyboardEventPlugin::channel_.get();
+  if (channel == NULL) return;
+  auto *channel_pointer = channel.get();
   if (channel_pointer)
     channel_pointer->InvokeMethod(
         kOnLogCallbackMethod,
@@ -179,7 +145,7 @@ void KeyboardEventPlugin::showText(LPCTSTR text) {
  * @param text 需要显示的字符串
  */
 void showText(LPCTSTR text, int behavior) {
-  KeyboardEventPlugin::get_instance().showText(text);
+  KeyboardEventPlugin::showText(text);
 }
 
 void KeyboardEventPluginRegisterWithRegistrar(
