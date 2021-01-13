@@ -8,6 +8,7 @@ set(PLUGIN_NAME "keyboard_event_plugin")
 
 add_library(${PLUGIN_NAME} SHARED
   "keyboard_event_plugin.cpp"
+  "keyboard_event.cpp"
   "debug.cpp"
 )
 apply_standard_settings(${PLUGIN_NAME})
