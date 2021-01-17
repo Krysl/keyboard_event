@@ -32,10 +32,27 @@ void log_init(TCHAR *logPath) {
 
 void log(const tostringstream &line) {
   if (logStream) {
-    ftprintf(logStream, _T("%s"), line.str().c_str());
+    ftprintf(logStream, line.str().c_str());
     fflush(logStream);
   }
-  OutputDebugString(line.str().c_str());
+  // OutputDebugString(line.str().c_str());
+  _tprintf(line.str().c_str());
+}
+void logA(std::string line) {
+  if (logStream) {
+    fprintf(logStream, line.c_str());
+    fflush(logStream);
+  }
+  // OutputDebugString(line.str().c_str());
+  printf(line.c_str());
+}
+void logW(std::wstring line) {
+  if (logStream) {
+    fwprintf(logStream, line.c_str());
+    fflush(logStream);
+  }
+  // OutputDebugString(line.str().c_str());
+  wprintf(line.c_str());
 }
 
 #endif

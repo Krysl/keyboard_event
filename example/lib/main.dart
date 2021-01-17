@@ -24,10 +24,12 @@ class _MyAppState extends State<MyApp> {
     initPlatformState();
     keyboardEvent = KeyboardEvent(
       onLog: (str) => setState(() {
-        if (str == 'Enter')
+        if (str == '<Enter>')
           _log.last += '\n';
-        else if (str == 'Backspace') //
+        else if (str == '<Backspace>') //
           _log.removeLast();
+        if (str == '<F5>')
+          _log.clear();
         else
           _log.add(str);
       }),

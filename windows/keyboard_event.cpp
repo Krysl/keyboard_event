@@ -38,13 +38,13 @@ LPCTSTR GetSymbolFromVK(UINT vk, UINT sc, BOOL mod, HKL hklLayout) {
   }
   // 将指定的虚拟键代码和键盘状态转换为相应的一个或多个Unicode字符。https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-tounicodeex
   int rr = ToUnicodeEx(vk, sc, btKeyState, cc, 2, 0, hklLayout);
-#ifdef _DEBUG
-  TCHAR ss[KL_NAMELENGTH];
-  GetKeyboardLayoutName(ss);
-  tostringstream line;
-  line << vk << ":" << rr << ":" << sc << "\n";
-  log(line);
-#endif
+// #ifdef _DEBUG
+//   TCHAR ss[KL_NAMELENGTH];
+//   GetKeyboardLayoutName(ss);
+//   tostringstream line;
+//   line << vk << ":" << rr << ":" << sc << "\n";
+//   log(line);
+// #endif
   if (rr > 0) {
     if (!visibleShift && mod && GetKeyState(VK_SHIFT) < 0) {
       // prefix "Shift - " only when Ctrl or Alt is hold (mod as TRUE)
@@ -85,7 +85,7 @@ void addBracket(LPWSTR str) {
 
 LPCTSTR getModSpecialKey(UINT vk, BOOL mod = FALSE) {
   static TCHAR modsk[64];
-  if (vk == 0xA0 || vk == 0xA1) {
+  if (vk == VK_LSHIFT|| vk == VK_RSHIFT) {
     if (!mod) {
       // show nothing if press SHIFT only
       return NULL;
@@ -157,7 +157,7 @@ LRESULT CALLBACK LLKeyboardProc(int nCode, WPARAM wp, LPARAM lp) {
   if (nCode < 0) return CallNextHookEx(kbdhook, nCode, wp, lp);
 
   static DWORD lastvk = 0;
-  UINT spk = visibleShift ? 0xA0 : 0xA2;
+  UINT spk = visibleShift ? VK_LSHIFT: VK_LCONTROL;
   GUITHREADINFO Gti;
   ::ZeroMemory(&Gti, sizeof(GUITHREADINFO));
   Gti.cbSize = sizeof(GUITHREADINFO);
@@ -176,9 +176,9 @@ LRESULT CALLBACK LLKeyboardProc(int nCode, WPARAM wp, LPARAM lp) {
   } else if (wp == WM_KEYUP || wp == WM_SYSKEYUP) {
     lastvk = 0;
     // fadeLastLabel(TRUE);
-    if (k.vkCode >= spk && k.vkCode <= 0xA5 || k.vkCode == 0x5B ||
-        k.vkCode == 0x5C) {
-      // cleanModifier(k.vkCode, modifierkey);
+    if (k.vkCode >= spk && k.vkCode <= VK_RMENU || k.vkCode == VK_LWIN ||
+        k.vkCode == VK_RWIN) {
+      cleanModifier(k.vkCode, modifierkey);
       modifierUsed = FALSE;
     }
   } else if (wp == WM_KEYDOWN || wp == WM_SYSKEYDOWN) {
@@ -187,8 +187,8 @@ LRESULT CALLBACK LLKeyboardProc(int nCode, WPARAM wp, LPARAM lp) {
       return TRUE;
     }
     int fin = 0;
-    if (k.vkCode >= spk && k.vkCode <= 0xA5 ||   // ctrl / alt
-        k.vkCode == 0x5B || k.vkCode == 0x5C) {  // win
+    if (k.vkCode >= spk && k.vkCode <= VK_RMENU ||   // ctrl / alt
+        k.vkCode == VK_LWIN || k.vkCode == VK_RWIN) {  // win
       LPCTSTR ck = getSpecialKey(k.vkCode);
       if (modifierkey[0] == '\0') {
         wcscpy_s(modifierkey, 64, ck);
@@ -208,8 +208,8 @@ LRESULT CALLBACK LLKeyboardProc(int nCode, WPARAM wp, LPARAM lp) {
     } else {
       // WORD a = 0;
       BOOL mod = modifierkey[0] != '\0';
-      if (k.vkCode == 0x08 || k.vkCode == 0x09 || k.vkCode == 0x0D ||
-          k.vkCode == 0x1B || k.vkCode == 0x20) {
+      if (k.vkCode == VK_BACK || k.vkCode == VK_TAB || k.vkCode == VK_RETURN ||
+          k.vkCode == VK_ESCAPE|| k.vkCode == VK_SPACE) {
         // for <BS>/<Tab>/<ENTER>/<ESC>/<SPACE>, treat them as specialKeys
         theKey = getModSpecialKey(k.vkCode, mod);
         fin = 1;

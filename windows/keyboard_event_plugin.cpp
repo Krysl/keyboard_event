@@ -60,7 +60,6 @@ void KeyboardEventPlugin::RegisterWithRegistrar(
 KeyboardEventPlugin::KeyboardEventPlugin() {
   HMODULE hInstance = GetModuleHandle(nullptr);
   kbdhook = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInstance, NULL);
-  // KeyboardEventPlugin::channel_ = std::move(channel);
 #ifdef _DEBUG
   log_init(NULL);
 #endif
@@ -91,6 +90,7 @@ void KeyboardEventPlugin::HandleMethodCall(
     //   channel_->InvokeMethod(kOnLogCallbackMethod)；
 
   } else {
+    // debug("%s Not Implemented\n", method_call.method_name().c_str());
     result->NotImplemented();
   }
 }
@@ -122,19 +122,30 @@ std::string LPCTSTR_To_string(LPCTSTR str) {
  * @param text 需要显示的字符串
  */
 void KeyboardEventPlugin::showText(LPCTSTR text) {
-// _tprintf(_T("%s\n"), text);
-// MessageBox(NULL, text, TEXT("message"), MB_OK);
-#ifdef _DEBUG
-  tostringstream line;
-  line << text << "\n";
-  log(line);
-#endif
+  // _tprintf(_T("%s\n"), text);
+  // MessageBox(NULL, text, TEXT("message"), MB_OK);
+  // #ifdef _DEBUG
+  //   tostringstream line;
+  //   line << text << "\n";
+  //   log(line);
+  // #endif
   if (channel == NULL) return;
   auto *channel_pointer = channel.get();
-  if (channel_pointer)
+  if (channel_pointer) {
+    auto result =
+        std::make_unique<flutter::EngineMethodResult<flutter::EncodableValue>>(
+            [](const uint8_t *reply, size_t reply_size) {
+              debug("get result={reply}, size={size}", "reply"_a=reply,
+                    "size"_a=reply_size, "\n");
+            },
+            &flutter::StandardMethodCodec::GetInstance());
+    // auto resultPtr = result.get();
     channel_pointer->InvokeMethod(
         kOnLogCallbackMethod,
-        std::make_unique<flutter::EncodableValue>(LPCTSTR_To_string(text)));
+        std::make_unique<flutter::EncodableValue>(LPCTSTR_To_string(text)),
+        std::move(result));
+    // resultPtr->get().
+  }
 }
 }  // namespace
 

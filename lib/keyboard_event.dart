@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:logger/logger.dart';
 
 const String _kOnLogCallbackMethod = "onLog";
-typedef OnLogCallback = Function(String str);
+typedef OnLogCallback = void Function(String str);
+
+var log = Logger();
 
 class KeyboardEvent {
   static const MethodChannel _channel = const MethodChannel('keyboard_event');
@@ -19,11 +22,13 @@ class KeyboardEvent {
     return version;
   }
 
-  Future<Null> _callbackHandler(MethodCall methodCall) async {
+  Future<dynamic> _callbackHandler(MethodCall methodCall) async {
     if (methodCall.method == _kOnLogCallbackMethod) {
       if (this.onLog == null) return;
       final String str = methodCall.arguments;
       this.onLog(str);
+      // log.i(str);
+      return '_callbackHandler $str';
     }
   }
 }

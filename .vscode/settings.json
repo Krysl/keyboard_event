@@ -65,6 +65,13 @@
     "xlocbuf": "cpp",
     "xlocmes": "cpp",
     "xlocmon": "cpp",
-    "xloctime": "cpp"
+    "xloctime": "cpp",
+    "complex": "cpp",
+    "array": "cpp",
+    "clocale": "cpp",
+    "cstdarg": "cpp",
+    "fstream": "cpp",
+    "iomanip": "cpp",
+    "format": "cpp"
   }
 }
