@@ -11,15 +11,23 @@
 #include <flutter/standard_method_codec.h>
 
 #include <tchar.h>
+#include <initializer_list>
 #include <map>
 #include <memory>
 #include <sstream>
 
-#include "debug.h"
+#include <fmt/format.h>
 #include "keyboard_event.h"
 #include "keyboard_event_plugin.h"
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/spdlog.h"
+
+using namespace spdlog;
+using namespace fmt::literals;
 
 HHOOK kbdhook;
+std::unique_ptr<spdlog::logger> l = NULL;
 
 namespace {
 std::unique_ptr<flutter::MethodChannel<>> channel = NULL;
@@ -58,18 +66,29 @@ void KeyboardEventPlugin::RegisterWithRegistrar(
 }
 
 KeyboardEventPlugin::KeyboardEventPlugin() {
+  spdlog::info("Hello, {}!", "World");
   HMODULE hInstance = GetModuleHandle(nullptr);
   kbdhook = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInstance, NULL);
 #ifdef _DEBUG
-  log_init(NULL);
+  auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+  console_sink->set_level(spdlog::level::debug);
+  console_sink->set_pattern("[keyboard_event] [%^%l%$] %v");
+
+  auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+      "logs/log.txt", true);
+  file_sink->set_level(spdlog::level::trace);
+
+  l = std::make_unique<spdlog::logger>(
+      "multi_sink",
+      std::initializer_list<spdlog::sink_ptr>{console_sink, file_sink});
+  l->set_level(spdlog::level::debug);
+  l->warn("this should appear in both console and file");
+  l->info("this message should not appear in the console, only in the file");
 #endif
 }
 
 KeyboardEventPlugin::~KeyboardEventPlugin() {
   UnhookWindowsHookEx(kbdhook);
-#ifdef _DEBUG
-  if (logStream) fclose(logStream);
-#endif
 }
 
 void KeyboardEventPlugin::HandleMethodCall(
@@ -135,8 +154,8 @@ void KeyboardEventPlugin::showText(LPCTSTR text) {
     auto result =
         std::make_unique<flutter::EngineMethodResult<flutter::EncodableValue>>(
             [](const uint8_t *reply, size_t reply_size) {
-              debug("get result={reply}, size={size}", "reply"_a=reply,
-                    "size"_a=reply_size, "\n");
+              l->debug("get result={reply}, size={size}", "reply"_a = reply,
+                    "size"_a = reply_size, "\n");
             },
             &flutter::StandardMethodCodec::GetInstance());
     // auto resultPtr = result.get();

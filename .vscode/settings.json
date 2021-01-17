@@ -72,6 +72,9 @@
     "cstdarg": "cpp",
     "fstream": "cpp",
     "iomanip": "cpp",
-    "format": "cpp"
+    "format": "cpp",
+    "condition_variable": "cpp",
+    "mutex": "cpp",
+    "thread": "cpp"
   }
 }
