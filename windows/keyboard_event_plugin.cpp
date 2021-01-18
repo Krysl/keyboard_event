@@ -7,7 +7,9 @@
 #include <VersionHelpers.h>
 
 #include <flutter/method_channel.h>
+#include <flutter/method_result_functions.h>
 #include <flutter/plugin_registrar_windows.h>
+#include <flutter/standard_message_codec.h>
 #include <flutter/standard_method_codec.h>
 
 #include <tchar.h>
@@ -15,19 +17,38 @@
 #include <map>
 #include <memory>
 #include <sstream>
+#include "spdlog/spdlog.h"
 
 #include <fmt/format.h>
 #include "keyboard_event.h"
 #include "keyboard_event_plugin.h"
+#include "spdlog/fmt/bin_to_hex.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/spdlog.h"
 
 using namespace spdlog;
 using namespace fmt::literals;
 
 HHOOK kbdhook;
-std::unique_ptr<spdlog::logger> l = NULL;
+
+void log_init() {
+#ifdef _DEBUG
+  auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+  console_sink->set_level(spdlog::level::debug);
+  console_sink->set_pattern("[keyboard_event] [%^%l%$] %v");
+
+  auto file_sink =
+      std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/log.txt", true);
+  file_sink->set_level(spdlog::level::trace);
+
+  set_default_logger(std::make_shared<spdlog::logger>(
+      "multi_sink",
+      std::initializer_list<spdlog::sink_ptr>{console_sink, file_sink}));
+  set_level(spdlog::level::debug);
+  warn("this should appear in both console and file");
+  info("this message should not appear in the console, only in the file");
+#endif
+}
 
 namespace {
 std::unique_ptr<flutter::MethodChannel<>> channel = NULL;
@@ -69,27 +90,10 @@ KeyboardEventPlugin::KeyboardEventPlugin() {
   spdlog::info("Hello, {}!", "World");
   HMODULE hInstance = GetModuleHandle(nullptr);
   kbdhook = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInstance, NULL);
-#ifdef _DEBUG
-  auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-  console_sink->set_level(spdlog::level::debug);
-  console_sink->set_pattern("[keyboard_event] [%^%l%$] %v");
-
-  auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
-      "logs/log.txt", true);
-  file_sink->set_level(spdlog::level::trace);
-
-  l = std::make_unique<spdlog::logger>(
-      "multi_sink",
-      std::initializer_list<spdlog::sink_ptr>{console_sink, file_sink});
-  l->set_level(spdlog::level::debug);
-  l->warn("this should appear in both console and file");
-  l->info("this message should not appear in the console, only in the file");
-#endif
+  log_init();
 }
 
-KeyboardEventPlugin::~KeyboardEventPlugin() {
-  UnhookWindowsHookEx(kbdhook);
-}
+KeyboardEventPlugin::~KeyboardEventPlugin() { UnhookWindowsHookEx(kbdhook); }
 
 void KeyboardEventPlugin::HandleMethodCall(
     const flutter::MethodCall<flutter::EncodableValue> &method_call,
@@ -104,12 +108,14 @@ void KeyboardEventPlugin::HandleMethodCall(
     } else if (IsWindows7OrGreater()) {
       version_stream << "7";
     }
+    version_stream << " Date: [" << __DATE__ << "],"  //
+                   << " Time: [" << __TIME__ << "]";
     result->Success(flutter::EncodableValue(version_stream.str()));
     // } else if (method_call.method_name().compare("onLog") == 0) {
     //   channel_->InvokeMethod(kOnLogCallbackMethod)；
 
   } else {
-    // debug("%s Not Implemented\n", method_call.method_name().c_str());
+    debug("%s Not Implemented\n", method_call.method_name().c_str());
     result->NotImplemented();
   }
 }
@@ -141,29 +147,66 @@ std::string LPCTSTR_To_string(LPCTSTR str) {
  * @param text 需要显示的字符串
  */
 void KeyboardEventPlugin::showText(LPCTSTR text) {
-  // _tprintf(_T("%s\n"), text);
-  // MessageBox(NULL, text, TEXT("message"), MB_OK);
-  // #ifdef _DEBUG
-  //   tostringstream line;
-  //   line << text << "\n";
-  //   log(line);
-  // #endif
   if (channel == NULL) return;
   auto *channel_pointer = channel.get();
   if (channel_pointer) {
     auto result =
         std::make_unique<flutter::EngineMethodResult<flutter::EncodableValue>>(
             [](const uint8_t *reply, size_t reply_size) {
-              l->debug("get result={reply}, size={size}", "reply"_a = reply,
-                    "size"_a = reply_size, "\n");
+#pragma warning(disable : 4189)
+              // const char *buf = (const char *)reply;
+              auto buf = std::string((char *)reply, reply_size);
+#if 0
+              auto retValPtr =
+                  flutter::StandardMessageCodec::GetInstance().DecodeMessage(
+                      reply + 1, reply_size - 1);
+              auto retVal = *retValPtr.get();
+              if (std::holds_alternative<std::string>(retVal)) {
+                std::string some_string = std::get<std::string>(retVal);
+                debug("get String:{}\n", some_string);
+              }
+#else
+              // auto result = flutter::MethodResult<flutter::EncodableValue>();
+              static auto result =
+                  flutter::MethodResultFunctions<flutter::EncodableValue>(
+                      [](const flutter::EncodableValue *result) {
+                        if (std::holds_alternative<std::string>(*result)) {
+                          std::string some_string =
+                              std::get<std::string>(*result);
+                          debug("onLog: ret = {}", some_string);
+                        }
+                      },
+                      [](const std::string &error_code,
+                         const std::string &error_message,
+                         const flutter::EncodableValue *error_details) {
+                        if (std::holds_alternative<std::string>(
+                                *error_details)) {
+                          std::string err_string =
+                              std::get<std::string>(*error_details);
+                          error(
+                              "onLog ERROR! errCode={}, msg={}, details={}",  //
+                              error_code, error_message, err_string);
+                        } else {
+                          error("onLog ERROR! errCode={}, msg={}",  //
+                                error_code, error_message);
+                        }
+                      },
+                      []() { error("onLog ERROR! NotImplemented!"); });
+              flutter::StandardMethodCodec::GetInstance()
+                  .DecodeAndProcessResponseEnvelope(reply, reply_size, &result);
+
+#endif
+              // debug("Binary len={size}:\n{hex:a}",
+              //       "hex"_a = spdlog::to_hex(buf), "size"_a = reply_size,
+              //       "\n");
+              // debug("get result={reply}, size={size}", "reply"_a = reply,
+              //       "size"_a = reply_size, "\n");
             },
             &flutter::StandardMethodCodec::GetInstance());
-    // auto resultPtr = result.get();
     channel_pointer->InvokeMethod(
         kOnLogCallbackMethod,
         std::make_unique<flutter::EncodableValue>(LPCTSTR_To_string(text)),
         std::move(result));
-    // resultPtr->get().
   }
 }
 }  // namespace

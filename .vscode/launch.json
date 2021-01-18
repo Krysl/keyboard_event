@@ -5,6 +5,41 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "(Windows) 附加",
+      "type": "cppvsdbg",
+      "request": "attach",
+      "processId": "${command:pickProcess}",
+      "sourceFileMap": {
+        "example\\windows\\flutter\\ephemeral\\.plugin_symlinks\\keyboard_event\\windows\\": "windows"
+      },
+    },
+    {
+      "name": "(Windows) 启动",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/example/build/windows/runner/Debug/keyboard_event_example.exe",
+      // "program": "${workspaceRoot}/example/build/windows/runner/Debug/keyboard_event_plugin.dll",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [
+        {
+          "name": "_NT_SYMBOL_PATH",
+          "value": "D:\\flutter\\prj\\plugins\\keyboard_event\\example\\build\\windows\\plugins\\keyboard_event\\Debug"
+        },
+        {
+          "name": "PATH",
+          "value": "${env:PATH};D:\\flutter\\prj\\plugins\\keyboard_event\\example\\build\\windows\\plugins\\keyboard_event\\Debug"
+        }
+      ],
+      "sourceFileMap": {
+        "example\\windows\\flutter\\ephemeral\\.plugin_symlinks\\keyboard_event\\windows\\": "windows"
+      },
+      // "symbolSearchPath": "D:\\flutter\\prj\\plugins\\keyboard_event\\example\\build\\windows\\plugins\\keyboard_event\\Debug",
+      // "symbolSearchPath": "https://msdl.microsoft.com/download/symbols",
+      "externalConsole": false
+    },
+    {
       "name": "keyboard_event",
       "request": "launch",
       "type": "dart",

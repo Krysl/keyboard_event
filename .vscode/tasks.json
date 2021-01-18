@@ -16,6 +16,18 @@
         "showReuseMessage": true,
         "clear": true
       }
+    },
+    {
+      "label": "build windows",
+      "type": "shell",
+      "command": [
+        ".\\scripts\\build_plugin.bat"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
     }
   ]
 }
