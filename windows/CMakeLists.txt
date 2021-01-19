@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.15)
 set(PROJECT_NAME "keyboard_event")
 project(${PROJECT_NAME} LANGUAGES CXX)
 
+set(ENV{LC_ALL}, .UTF8)
+
 set(CMAKE_CXX_STANDARD 11)
 # set(CMAKE_PREFIX_PATH "D:/Program Files/CMake")
 # set(CMAKE_MODULE_PATH "D:/Program Files/CMake")
@@ -14,9 +16,18 @@ set(PLUGIN_NAME "keyboard_event_plugin")
 
 find_package(spdlog REQUIRED)
 
+# execute_process(COMMAND cmd /C ..\\scripts\\timestamp.bat)
+
 add_library(${PLUGIN_NAME} SHARED
   "keyboard_event_plugin.cpp"
   "keyboard_event.cpp"
+  "codeconvert.cpp"
+  "timestamp.h"
+)
+add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}\timestamp.h
+  COMMAND cmd /C echo ${PROJECT_SOURCE_DIR}
+  COMMAND cmd /C timestamp.bat .
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
 apply_standard_settings(${PLUGIN_NAME})
 set_target_properties(${PLUGIN_NAME} PROPERTIES

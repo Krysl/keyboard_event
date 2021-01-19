@@ -20,11 +20,13 @@
 #include "spdlog/spdlog.h"
 
 #include <fmt/format.h>
+#include "codeconvert.h"
 #include "keyboard_event.h"
 #include "keyboard_event_plugin.h"
 #include "spdlog/fmt/bin_to_hex.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
+#include "timestamp.h"
 
 using namespace spdlog;
 using namespace fmt::literals;
@@ -67,6 +69,7 @@ class KeyboardEventPlugin : public flutter::Plugin {
       const flutter::MethodCall<flutter::EncodableValue> &method_call,
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
   static const char kOnLogCallbackMethod[];
+  UINT _codePage;
 };
 
 const char KeyboardEventPlugin::kOnLogCallbackMethod[] = "onLog";
@@ -87,7 +90,8 @@ void KeyboardEventPlugin::RegisterWithRegistrar(
 }
 
 KeyboardEventPlugin::KeyboardEventPlugin() {
-  spdlog::info("Hello, {}!", "World");
+  _codePage = getCodePage();
+
   HMODULE hInstance = GetModuleHandle(nullptr);
   kbdhook = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInstance, NULL);
   log_init();
@@ -108,9 +112,21 @@ void KeyboardEventPlugin::HandleMethodCall(
     } else if (IsWindows7OrGreater()) {
       version_stream << "7";
     }
-    version_stream << " Date: [" << __DATE__ << "],"  //
-                   << " Time: [" << __TIME__ << "]";
-    result->Success(flutter::EncodableValue(version_stream.str()));
+    version_stream << "  [" << TIMESTAMP << "]";
+    // version_stream << "周";  // 21608=0x5468 [214,220]=[D6,DC]
+    if (_codePage == 65001) {
+      result->Success(flutter::EncodableValue(version_stream.str()));
+      debug(version_stream.str());
+    } else if (_codePage == 936) {
+      std::string gbkStr = version_stream.str();
+      std::string str = gbkstring2utf8string(gbkStr);
+      result->Success(flutter::EncodableValue(str));
+      debug(str);
+    } else {
+      result->NotImplemented();
+      error("Error: Unknow Codepage!");
+    }
+
     // } else if (method_call.method_name().compare("onLog") == 0) {
     //   channel_->InvokeMethod(kOnLogCallbackMethod)；
 

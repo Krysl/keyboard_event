@@ -64,7 +64,12 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n$_log'),
+          child: Text('运行于: $_platformVersion\n$_log'),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            initPlatformState();
+          },
         ),
       ),
     );
