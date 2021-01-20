@@ -3,10 +3,11 @@ set(PROJECT_NAME "keyboard_event")
 project(${PROJECT_NAME} LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 11)
-# set(CMAKE_PREFIX_PATH "D:/Program Files/CMake")
-# set(CMAKE_MODULE_PATH "D:/Program Files/CMake")
-# MESSAGE("CMAKE_PREFIX_PATH= ${CMAKE_PREFIX_PATH}")
-# MESSAGE("CMAKE_MODULE_PATH= ${CMAKE_MODULE_PATH}")
+add_compile_options(/utf-8)
+# set(ENV{CMAKE_PREFIX_PATH} "D:/Program Files/CMake")
+# set(ENV{CMAKE_MODULE_PATH} "D:/Program Files/CMake")
+# MESSAGE("CMAKE_PREFIX_PATH= " $ENV{CMAKE_PREFIX_PATH})
+# MESSAGE("CMAKE_MODULE_PATH= " $ENV{CMAKE_MODULE_PATH})
 
 # This value is used when generating builds using this plugin, so it must
 # not be changed
@@ -22,10 +23,19 @@ add_library(${PLUGIN_NAME} SHARED
   "codeconvert.cpp"
   "timestamp.h"
 )
-add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}\timestamp.h
+# add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}\timestamp.h
+#   COMMAND cmd /C echo ${PROJECT_SOURCE_DIR}
+#   COMMAND cmd /C timestamp.bat .
+#   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+# )
+set(TIMESTAMP_H timestamp.h)
+add_custom_target(${TIMESTAMP_H}
   COMMAND cmd /C echo ${PROJECT_SOURCE_DIR}
   COMMAND cmd /C timestamp.bat .
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
+add_dependencies(${PLUGIN_NAME}
+  ${TIMESTAMP_H}
 )
 apply_standard_settings(${PLUGIN_NAME})
 set_target_properties(${PLUGIN_NAME} PROPERTIES
