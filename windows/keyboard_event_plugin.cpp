@@ -69,7 +69,9 @@ class KeyboardEventPlugin : public flutter::Plugin {
       const flutter::MethodCall<flutter::EncodableValue> &method_call,
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
   static const char kOnLogCallbackMethod[];
+#ifdef _DEBUG
   UINT _codePage;
+#endif
 };
 
 const char KeyboardEventPlugin::kOnLogCallbackMethod[] = "onLog";
@@ -90,8 +92,9 @@ void KeyboardEventPlugin::RegisterWithRegistrar(
 }
 
 KeyboardEventPlugin::KeyboardEventPlugin() {
+#ifdef _DEBUG
   _codePage = getCodePage();
-
+#endif
   HMODULE hInstance = GetModuleHandle(nullptr);
   kbdhook = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInstance, NULL);
   log_init();
@@ -113,23 +116,8 @@ void KeyboardEventPlugin::HandleMethodCall(
       version_stream << "7";
     }
     version_stream << "  [" << TIMESTAMP << "]";
-    // version_stream << "周";  // 21608=0x5468 [214,220]=[D6,DC]
-    if (_codePage == 65001) {
-      result->Success(flutter::EncodableValue(version_stream.str()));
-      debug(version_stream.str());
-    } else if (_codePage == 936) {
-      std::string gbkStr = version_stream.str();
-      std::string str = gbkstring2utf8string(gbkStr);
-      result->Success(flutter::EncodableValue(str));
-      debug(str);
-    } else {
-      result->NotImplemented();
-      error("Error: Unknow Codepage!");
-    }
-
-    // } else if (method_call.method_name().compare("onLog") == 0) {
-    //   channel_->InvokeMethod(kOnLogCallbackMethod)；
-
+    result->Success(flutter::EncodableValue(version_stream.str()));
+    debug(version_stream.str());
   } else {
     debug("%s Not Implemented\n", method_call.method_name().c_str());
     result->NotImplemented();
@@ -172,16 +160,6 @@ void KeyboardEventPlugin::showText(LPCTSTR text) {
 #pragma warning(disable : 4189)
               // const char *buf = (const char *)reply;
               auto buf = std::string((char *)reply, reply_size);
-#if 0
-              auto retValPtr =
-                  flutter::StandardMessageCodec::GetInstance().DecodeMessage(
-                      reply + 1, reply_size - 1);
-              auto retVal = *retValPtr.get();
-              if (std::holds_alternative<std::string>(retVal)) {
-                std::string some_string = std::get<std::string>(retVal);
-                debug("get String:{}\n", some_string);
-              }
-#else
               // auto result = flutter::MethodResult<flutter::EncodableValue>();
               static auto result =
                   flutter::MethodResultFunctions<flutter::EncodableValue>(
@@ -210,13 +188,6 @@ void KeyboardEventPlugin::showText(LPCTSTR text) {
                       []() { error("onLog ERROR! NotImplemented!"); });
               flutter::StandardMethodCodec::GetInstance()
                   .DecodeAndProcessResponseEnvelope(reply, reply_size, &result);
-
-#endif
-              // debug("Binary len={size}:\n{hex:a}",
-              //       "hex"_a = spdlog::to_hex(buf), "size"_a = reply_size,
-              //       "\n");
-              // debug("get result={reply}, size={size}", "reply"_a = reply,
-              //       "size"_a = reply_size, "\n");
             },
             &flutter::StandardMethodCodec::GetInstance());
     channel_pointer->InvokeMethod(

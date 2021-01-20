@@ -62,17 +62,6 @@ std::string gbkstring2utf8string(const std::string gbkstr) {
 
 UINT getCodePage() {
   UINT _codePage = 0;
-  // setlocale(LC_ALL,"");
-  // setlocale(LC_ALL, ".UTF8");
-  // CPINFOEXA cpInfo;
-  // BOOL ret = GetCPInfoExA(CP_THREAD_ACP, 0, &cpInfo);
-  // if (ret) {
-  //   _codePage = cpInfo.CodePage;
-  //   spdlog::info("Hello, {}! codepage={}={}", "World", _codePage,
-  //                gbkstring2utf8string(std::string(cpInfo.CodePageName)));
-  // } else {
-  //   _codePage = 0;
-  // }
   const std::string str("一");
   const unsigned char *_str = (const unsigned char *)str.c_str();
 

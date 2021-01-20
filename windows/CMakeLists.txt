@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.15)
 set(PROJECT_NAME "keyboard_event")
 project(${PROJECT_NAME} LANGUAGES CXX)
 
-set(ENV{LC_ALL}, .UTF8)
-
 set(CMAKE_CXX_STANDARD 11)
 # set(CMAKE_PREFIX_PATH "D:/Program Files/CMake")
 # set(CMAKE_MODULE_PATH "D:/Program Files/CMake")
