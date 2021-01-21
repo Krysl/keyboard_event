@@ -6,6 +6,8 @@
 // For getPlatformVersion; remove unless needed for your plugin implementation.
 #include <VersionHelpers.h>
 
+#include <flutter/event_channel.h>
+#include <flutter/event_stream_handler_functions.h>
 #include <flutter/method_channel.h>
 #include <flutter/method_result_functions.h>
 #include <flutter/plugin_registrar_windows.h>
@@ -20,16 +22,20 @@
 #include "spdlog/spdlog.h"
 
 #include <fmt/format.h>
-#include "codeconvert.h"
-#include "keyboard_event.h"
-#include "keyboard_event_plugin.h"
 #include "spdlog/fmt/bin_to_hex.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
+
+#include "codeconvert.h"
+#include "keyboard_event.h"
+#include "keyboard_event_plugin.h"
+#include "map_serializer.h"
 #include "timestamp.h"
+#include "virtual_key_map.h"
 
 using namespace spdlog;
 using namespace fmt::literals;
+using namespace flutter;
 
 HHOOK kbdhook;
 
@@ -52,8 +58,28 @@ void log_init() {
 #endif
 }
 
+void virtualKeyMap_init() {
+  //添加缺漏
+  /*
+   * VK_0 - VK_9 are the same as ASCII '0' - '9' (0x30 - 0x39)
+   * 0x3A - 0x40 : unassigned
+   * VK_A - VK_Z are the same as ASCII 'A' - 'Z' (0x41 - 0x5A)
+   */
+  char ch[2] = {0, 0};
+  for (int i = 0; i < 10; i++) {
+    ch[0] = (char)('0' + i);
+    virtualKeyMap[std::string(ch)] = 0x30 + i;
+  }
+  for (int i = 0; i < 26; i++) {
+    ch[0] = (char)('A' + i);
+    virtualKeyMap[std::string(ch)] = 0x41 + i;
+  }
+}
+
 namespace {
 std::unique_ptr<flutter::MethodChannel<>> channel = NULL;
+std::unique_ptr<flutter::EventChannel<>> eventChannel = NULL;
+std::unique_ptr<EventSink<EncodableValue>> eventSink = NULL;
 
 class KeyboardEventPlugin : public flutter::Plugin {
  public:
@@ -69,24 +95,141 @@ class KeyboardEventPlugin : public flutter::Plugin {
       const flutter::MethodCall<flutter::EncodableValue> &method_call,
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
   static const char kOnLogCallbackMethod[];
+  static const char kGetVirtualKeyMapMethod[];
 #ifdef _DEBUG
   UINT _codePage;
 #endif
 };
 
 const char KeyboardEventPlugin::kOnLogCallbackMethod[] = "onLog";
+const char KeyboardEventPlugin::kGetVirtualKeyMapMethod[] = "getVirtualKeyMap";
+
+BOOL isDeadKey(DWORD vkCode) {
+  GUITHREADINFO Gti;
+  ::ZeroMemory(&Gti, sizeof(GUITHREADINFO));
+  Gti.cbSize = sizeof(GUITHREADINFO);
+  ::GetGUIThreadInfo(0, &Gti);
+  DWORD dwThread = ::GetWindowThreadProcessId(Gti.hwndActive, 0);
+  HKL hklLayout = ::GetKeyboardLayout(dwThread);
+  UINT isDeadKey =
+      ((MapVirtualKeyEx(vkCode, MAPVK_VK_TO_CHAR, hklLayout) & 0x80000000) >>
+       31);
+  return isDeadKey > 0;
+}
+
+inline int wp2keyMsg(WPARAM wp) {
+  int keyMsg = 0;
+  switch (wp) {
+    case WM_KEYDOWN:
+      keyMsg = 0;
+      break;
+    case WM_KEYUP:
+      keyMsg = 1;
+      break;
+    case WM_SYSKEYDOWN:
+      keyMsg = 2;
+      break;
+    case WM_SYSKEYUP:
+      keyMsg = 3;
+      break;
+    default:
+      keyMsg = 3;
+      break;
+  }
+  return keyMsg;
+}
+
+LRESULT llKeyboardProc(int nCode, WPARAM wp, LPARAM lp) {
+  KBDLLHOOKSTRUCT k = *(KBDLLHOOKSTRUCT *)lp;
+  if (nCode < 0) return CallNextHookEx(kbdhook, nCode, wp, lp);
+  if (!isDeadKey(k.vkCode)) {
+    EventSink<EncodableValue> *sink = eventSink.get();
+    int keyMsg = wp2keyMsg(wp);
+    sink->Success(EncodableValue(EncodableList{
+        EncodableValue(keyMsg),                 //
+        EncodableValue((int64_t)k.vkCode),      //
+        EncodableValue((int64_t)k.scanCode),    //
+        EncodableValue((int64_t)k.flags),       //
+        EncodableValue((int64_t)k.time),        //
+        EncodableValue((int64_t)k.dwExtraInfo)  //
+    }));
+  }
+  return CallNextHookEx(kbdhook, nCode, wp, lp);
+};
+
+template <typename T = EncodableValue>
+void KeyboardHookEnable(std::unique_ptr<EventSink<T>> &&events) {
+  HMODULE hInstance = GetModuleHandle(nullptr);
+
+  if constexpr (std::is_same_v<T, EncodableValue>) {
+    eventSink = std::move(events);
+  }
+
+  kbdhook = SetWindowsHookEx(WH_KEYBOARD_LL, llKeyboardProc, hInstance, NULL);
+  // kbdhook = _SetWindowsHookEx(llKeyboardProc);
+}
+
+void KeyboardHookDisable() {
+  if (kbdhook) {
+    UnhookWindowsHookEx(kbdhook);
+    kbdhook = NULL;
+  }
+}
+
+// int index = 0;
+template <typename T = EncodableValue>
+std::unique_ptr<StreamHandlerError<T>> KeyboardEventOnListen(
+    const T *arguments, std::unique_ptr<EventSink<T>> &&events) {
+  debug("KeyboardEventOnListen");
+  if constexpr (std::is_same_v<T, EncodableValue>) {
+    // EventSink<EncodableValue> *sink = events.get();
+    // std::string str = "TEST";
+    // str += std::to_string(index++);
+    // sink->Success(EncodableValue(str));
+    KeyboardHookEnable(std::move(events));
+  }
+  // auto error = std::make_unique<StreamHandlerError<T>>(
+  //     "error", "No OnListen handler set", nullptr);
+  // return std::move(error);
+  return NULL;
+}
+
+template <typename T = EncodableValue>
+std::unique_ptr<StreamHandlerError<T>> KeyboardEventOnError(
+    const T *arguments) {
+  debug("KeyboardEventOnError");
+  KeyboardHookDisable();
+  // auto error = std::make_unique<StreamHandlerError<T>>(
+  //     "error", "No OnListen handler set", nullptr);
+  // return std::move(error);
+  return NULL;
+}
 
 // static
 void KeyboardEventPlugin::RegisterWithRegistrar(
     flutter::PluginRegistrarWindows *registrar) {
+  virtualKeyMap_init();
+  StandardCodecSerializer *serializer = new MapSerializer();
   channel = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
       registrar->messenger(), "keyboard_event",
-      &flutter::StandardMethodCodec::GetInstance());
+      &flutter::StandardMethodCodec::GetInstance(serializer));
   auto plugin = std::make_unique<KeyboardEventPlugin>();
   channel->SetMethodCallHandler(
       [plugin_pointer = plugin.get()](const auto &call, auto result) {
         plugin_pointer->HandleMethodCall(call, std::move(result));
       });
+  eventChannel =
+      std::make_unique<flutter::EventChannel<flutter::EncodableValue>>(
+          registrar->messenger(), "keyboard_event/event",
+          &flutter::StandardMethodCodec::GetInstance(serializer)  //
+      );
+
+  std::unique_ptr<flutter::StreamHandler<flutter::EncodableValue>>
+      KeyboardEventStreamHandler =
+          std::make_unique<StreamHandlerFunctions<EncodableValue>>(
+              KeyboardEventOnListen<EncodableValue>,
+              KeyboardEventOnError<EncodableValue>);
+  eventChannel->SetStreamHandler(std::move(KeyboardEventStreamHandler));
 
   registrar->AddPlugin(std::move(plugin));
 }
@@ -95,12 +238,11 @@ KeyboardEventPlugin::KeyboardEventPlugin() {
 #ifdef _DEBUG
   _codePage = getCodePage();
 #endif
-  HMODULE hInstance = GetModuleHandle(nullptr);
-  kbdhook = SetWindowsHookEx(WH_KEYBOARD_LL, LLKeyboardProc, hInstance, NULL);
+  // KeyboardHookEnable();
   log_init();
 }
 
-KeyboardEventPlugin::~KeyboardEventPlugin() { UnhookWindowsHookEx(kbdhook); }
+KeyboardEventPlugin::~KeyboardEventPlugin() { KeyboardHookDisable(); }
 
 void KeyboardEventPlugin::HandleMethodCall(
     const flutter::MethodCall<flutter::EncodableValue> &method_call,
@@ -118,6 +260,8 @@ void KeyboardEventPlugin::HandleMethodCall(
     version_stream << "  [" << TIMESTAMP << "]";
     result->Success(flutter::EncodableValue(version_stream.str()));
     debug(version_stream.str());
+  } else if (method_call.method_name().compare(kGetVirtualKeyMapMethod) == 0) {
+    result->Success(CustomEncodableValue(MapData(virtualKeyMap)));
   } else {
     debug("%s Not Implemented\n", method_call.method_name().c_str());
     result->NotImplemented();

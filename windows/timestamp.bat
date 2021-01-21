@@ -1,3 +1,4 @@
+@echo off
 echo ======== %CD% %1========
 @REM set TIMESTAMPFILE=..\windows\timestamp.h
 set TIMESTAMPFILE=%1\timestamp.h

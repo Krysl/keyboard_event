@@ -2,7 +2,17 @@ cmake_minimum_required(VERSION 3.15)
 set(PROJECT_NAME "keyboard_event")
 project(${PROJECT_NAME} LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 11)
+# MESSAGE("CMAKE_CXX_STANDARD= " ${CMAKE_CXX_STANDARD})
+
+if(NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 14)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
+
+add_definitions(
+  -D_HAS_EXCEPTIONS=1  # error LNK2019: std::bad_cast
+)
+
 add_compile_options(/utf-8)
 # set(ENV{CMAKE_PREFIX_PATH} "D:/Program Files/CMake")
 # set(ENV{CMAKE_MODULE_PATH} "D:/Program Files/CMake")
@@ -15,19 +25,13 @@ set(PLUGIN_NAME "keyboard_event_plugin")
 
 find_package(spdlog REQUIRED)
 
-# execute_process(COMMAND cmd /C ..\\scripts\\timestamp.bat)
-
 add_library(${PLUGIN_NAME} SHARED
+  "map_serializer.cpp"
   "keyboard_event_plugin.cpp"
   "keyboard_event.cpp"
   "codeconvert.cpp"
   "timestamp.h"
 )
-# add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}\timestamp.h
-#   COMMAND cmd /C echo ${PROJECT_SOURCE_DIR}
-#   COMMAND cmd /C timestamp.bat .
-#   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-# )
 set(TIMESTAMP_H timestamp.h)
 add_custom_target(${TIMESTAMP_H}
   COMMAND cmd /C echo ${PROJECT_SOURCE_DIR}
