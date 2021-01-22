@@ -1,6 +1,6 @@
 # keyboard_event
 
-https://user-images.githubusercontent.com/5905801/105550907-f1bc4300-5d3c-11eb-9ebd-3b37611a6036.mp4
+![ScreenRecording](https://user-images.githubusercontent.com/5905801/105552008-50ce8780-5d3e-11eb-929d-800df996144f.gif)
 
 Flutter Plugin for Windows to catch **ALL** keyboard events, even if you are using other programs;
 
