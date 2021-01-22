@@ -27,7 +27,6 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 
 #include "codeconvert.h"
-#include "keyboard_event.h"
 #include "keyboard_event_plugin.h"
 #include "map_serializer.h"
 #include "timestamp.h"
@@ -147,8 +146,7 @@ void KeyboardHookEnable(std::unique_ptr<EventSink<T>> &&events) {
     eventSink = std::move(events);
   }
 
-  kbdhook = SetWindowsHookEx(WH_KEYBOARD_LL, llKeyboardProc, hInstance, NULL);
-  // kbdhook = _SetWindowsHookEx(llKeyboardProc);
+  kbdhook = SetWindowsHookEx(WH_KEYBOARD_LL, llKeyboardProc, hInstance, NULL);  
 }
 
 void KeyboardHookDisable() {
@@ -190,10 +188,11 @@ std::unique_ptr<StreamHandlerError<T>> KeyboardEventOnError(
 // static
 void KeyboardEventPlugin::RegisterWithRegistrar(
     flutter::PluginRegistrarWindows *registrar) {
-  StandardCodecSerializer *serializer = new MapSerializer();
+  // StandardCodecSerializer *serializer = new MapSerializer();
   channel = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
       registrar->messenger(), "keyboard_event",
-      &flutter::StandardMethodCodec::GetInstance(serializer));
+      &flutter::StandardMethodCodec::GetInstance(
+          &MapSerializer::GetInstance()));
   auto plugin = std::make_unique<KeyboardEventPlugin>();
   channel->SetMethodCallHandler(
       [plugin_pointer = plugin.get()](const auto &call, auto result) {
@@ -202,7 +201,8 @@ void KeyboardEventPlugin::RegisterWithRegistrar(
   eventChannel =
       std::make_unique<flutter::EventChannel<flutter::EncodableValue>>(
           registrar->messenger(), "keyboard_event/event",
-          &flutter::StandardMethodCodec::GetInstance(serializer)  //
+          &flutter::StandardMethodCodec::GetInstance(
+              &MapSerializer::GetInstance())  //
       );
 
   std::unique_ptr<flutter::StreamHandler<flutter::EncodableValue>>
@@ -242,7 +242,16 @@ void KeyboardEventPlugin::HandleMethodCall(
     result->Success(flutter::EncodableValue(version_stream.str()));
     debug(version_stream.str());
   } else if (method_call.method_name().compare(kGetVirtualKeyMapMethod) == 0) {
-    result->Success(CustomEncodableValue(MapData(virtualKeyName2CodeMap)));
+    auto args = *method_call.arguments();
+    int type = 0;
+    if (std::holds_alternative<int>(args)) {
+      type = std::get<int>(args);
+    }
+    if (type == 0) {
+      result->Success(CustomEncodableValue(MapData(virtualKeyName2CodeMap)));
+    } else {
+      result->Success(CustomEncodableValue(MapData(virtualKeyCode2NameMap)));
+    }
   } else {
     debug("%s Not Implemented\n", method_call.method_name().c_str());
     result->NotImplemented();

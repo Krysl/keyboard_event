@@ -28,7 +28,6 @@ find_package(spdlog REQUIRED)
 add_library(${PLUGIN_NAME} SHARED
   "map_serializer.cpp"
   "keyboard_event_plugin.cpp"
-  "keyboard_event.cpp"
   "map_serializer.h"
   "codeconvert.cpp"
   "timestamp.h"

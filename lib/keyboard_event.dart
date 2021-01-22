@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+
+// ignore: import_of_legacy_library_into_null_safe
 import 'package:logger/logger.dart';
 
 const String _kOnLogCallbackMethod = "onLog";
@@ -18,7 +20,7 @@ class KeyboardEvent {
   OnLogCallback onLog;
 
   KeyboardEvent({
-    this.onLog,
+    required this.onLog,
   }) {
     _channel.setMethodCallHandler(_callbackHandler);
   }
@@ -27,15 +29,46 @@ class KeyboardEvent {
     return version;
   }
 
-  static Future<Map<String, int>> get getVirtualKeyMap async {
-    final Map<String, int> virtualKeyMap =
-        Map<String, int>.from(await _channel.invokeMethod('getVirtualKeyMap'));
+  /// Get Virturl-Key Map 
+  /// 
+  /// See details:
+  /// "[Virtual-Key Codes](https://docs.microsoft.com/en-us/windows/desktop/inputdev/virtual-key-codes)"
+  /// 
+  /// name -> vk
+  /// ```
+  /// {
+  ///   'Virturl-Key Name': int Virturl-Key Code,
+  /// }
+  /// ```
+  static Future<Map<String, int>> get getVirtualKeyString2CodeMap async {
+    final Map<String, int> virtualKeyMap = Map<String, int>.from(
+        await _channel.invokeMethod('getVirtualKeyMap', 0));
     return virtualKeyMap;
+  }
+
+  /// Get Virturl-Key Map   
+  /// 
+  /// See details:
+  /// "[Virtual-Key Codes](https://docs.microsoft.com/en-us/windows/desktop/inputdev/virtual-key-codes)"
+  /// 
+  /// vk -> [name...]
+  /// ```
+  /// {
+  ///   int Virturl-Key Code: ['Virturl-Key Name 1','Virturl-Key Name 2',...],
+  /// }
+  /// ```
+  static Future<Map<int, List<String>>> get getVirtualKeyCode2StringMap async {
+    Map<int, List<String>> ret = {};
+    final Map<int, List<dynamic>> virtualKeyMap = Map<int, List<dynamic>>.from(
+        await _channel.invokeMethod('getVirtualKeyMap', 1));
+    virtualKeyMap.forEach((key, value) {
+      ret[key] = List<String>.from(value);
+    });
+    return ret;
   }
 
   Future<dynamic> _callbackHandler(MethodCall methodCall) async {
     if (methodCall.method == _kOnLogCallbackMethod) {
-      if (this.onLog == null) return;
       final String str = methodCall.arguments;
       this.onLog(str);
       // log.i(str);
@@ -44,7 +77,7 @@ class KeyboardEvent {
   }
 
   int nextListenerId = 1;
-  CancelListening _cancelListening;
+  CancelListening? _cancelListening;
   startListening(Listener listener) async {
     var subscription = _eventChannel
         .receiveBroadcastStream(nextListenerId++)
@@ -58,7 +91,7 @@ class KeyboardEvent {
 
   cancelListening() async {
     if (_cancelListening != null) {
-      _cancelListening();
+      _cancelListening!();
       _cancelListening = null;
     } else {
       debugPrint("keyboard_event/event No Need");

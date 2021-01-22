@@ -5,6 +5,10 @@
 
 #include <map>
 
+#include <flutter/encodable_value.h>
+
+using EV = flutter::EncodableValue;
+
 std::map<std::string, int> _virtualKeyName2CodeMap = {
     // clang-format off
 // "C:\Program Files (x86)\Windows Kits\10\Include\10.0.18362.0\um\WinUser.h".
@@ -358,16 +362,20 @@ constexpr const std::map<std::string, int> &virtualKeyName2CodeMap_init() {
 const std::map<std::string, int> &virtualKeyName2CodeMap =
     virtualKeyName2CodeMap_init();
 
-std::map<int, std::string> _virtualKeyCode2NameMap = {};
+std::map<int, std::vector<EV>> _virtualKeyCode2NameMap = {};
 
-const std::map<int, std::string> &virtualKeyCode2NameMap_init() {
-  std::for_each(virtualKeyName2CodeMap.cbegin(), virtualKeyName2CodeMap.cend(),
-                [](std::pair<std::string, int> element) {
-                  _virtualKeyCode2NameMap[element.second] = element.first;
-                });
+const std::map<int, std::vector<EV>> &virtualKeyCode2NameMap_init() {
+  std::for_each(
+      virtualKeyName2CodeMap.cbegin(), virtualKeyName2CodeMap.cend(),
+      [](std::pair<std::string, int> element) {
+        if (!_virtualKeyCode2NameMap.contains(element.second)) {
+          _virtualKeyCode2NameMap[element.second] = std::vector<EV>();
+        }
+        _virtualKeyCode2NameMap[element.second].push_back(EV(element.first));
+      });
   return _virtualKeyCode2NameMap;
 }
-const std::map<int, std::string> &virtualKeyCode2NameMap =
+const std::map<int, std::vector<EV>> &virtualKeyCode2NameMap =
     virtualKeyCode2NameMap_init();
 
 #endif  // __VIRTUAL_KEY_MAP_H__

@@ -37,7 +37,7 @@
       },
       // "symbolSearchPath": "D:\\flutter\\prj\\plugins\\keyboard_event\\example\\build\\windows\\plugins\\keyboard_event\\Debug",
       // "symbolSearchPath": "https://msdl.microsoft.com/download/symbols",
-      "externalConsole": false,
+      "console": "internalConsole",
     },
     {
       "name": "keyboard_event",

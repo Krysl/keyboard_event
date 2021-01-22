@@ -16,9 +16,8 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
   Map<String, int> _virtualKeyMap;
-  Map<int, String> _virtualKey2StrMap;
+  Map<int, List<String>> _virtualKey2StrMap;
   List<String> _err = [];
-  List<String> _log = [];
   List<String> _event = [];
   KeyboardEvent keyboardEvent;
   bool listenIsOn = false;
@@ -45,6 +44,7 @@ class _MyAppState extends State<MyApp> {
   Future<void> initPlatformState() async {
     String platformVersion;
     Map<String, int> virtualKeyMap;
+    Map<int, List<String>> virtualKeyMap2;
     List<String> err = [];
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
@@ -54,7 +54,13 @@ class _MyAppState extends State<MyApp> {
     }
 
     try {
-      virtualKeyMap = await KeyboardEvent.getVirtualKeyMap;
+      virtualKeyMap = await KeyboardEvent.getVirtualKeyString2CodeMap;
+    } on PlatformException {
+      err.add('Failed to get Virtual-Key Map.');
+    }
+
+    try {
+      virtualKeyMap2 = await KeyboardEvent.getVirtualKeyCode2StringMap;
     } on PlatformException {
       err.add('Failed to get Virtual-Key Map.');
     }
@@ -66,16 +72,8 @@ class _MyAppState extends State<MyApp> {
 
     setState(() {
       if (platformVersion != null) _platformVersion = platformVersion;
-      if (virtualKeyMap != null) {
-        _virtualKeyMap = virtualKeyMap;
-        for (var item in _virtualKeyMap.entries) {
-          _log.add('${_log.length}    ${item.key} : ${item.value}, \n');
-        }
-        _virtualKey2StrMap = {};
-        _virtualKeyMap.forEach((key, value) {
-          _virtualKey2StrMap[value] = key;
-        });
-      }
+      if (virtualKeyMap != null) _virtualKeyMap = virtualKeyMap;
+      if (virtualKeyMap2 != null) _virtualKey2StrMap = virtualKeyMap2;
       if (err.isNotEmpty) _err.addAll(err);
     });
   }
@@ -90,32 +88,115 @@ class _MyAppState extends State<MyApp> {
         body: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints viewportConstraints) {
             return SingleChildScrollView(
-              child: Column(
+              child: Row(
                 children: [
-                  Text('运行于: $_platformVersion\n}'),
-                  Text('event: $_event'),
-                  Switch(
-                    value: listenIsOn,
-                    onChanged: (bool newValue) {
-                      setState(() {
-                        listenIsOn = newValue;
-                        if (listenIsOn == true) {
-                          keyboardEvent.startListening((msg) {
-                            if (_virtualKey2StrMap != null) {
-                              setState(() {
-                                var list = List<int>.from(msg);
-                                _event.add(_virtualKey2StrMap[list[1]]);
-                              });
-                            }
-                            debugPrint(msg.toString());
-                          });
-                        } else {
-                          keyboardEvent.cancelListening();
-                        }
-                      });
-                    },
+                  SizedBox(
+                    width: 20,
                   ),
-                  Text(_log.join()),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('运行于: $_platformVersion'),
+                      Text('event: $_event'),
+                      Switch(
+                        value: listenIsOn,
+                        onChanged: (bool newValue) {
+                          setState(() {
+                            listenIsOn = newValue;
+                            if (listenIsOn == true) {
+                              keyboardEvent.startListening((msg) {
+                                if (_virtualKey2StrMap != null) {
+                                  setState(() {
+                                    var list = List<int>.from(msg);
+                                    _event.add(_virtualKey2StrMap[list[1]][0] ??
+                                        'Unknow Key ${list[1]}');
+                                  });
+                                }
+                                debugPrint(msg.toString());
+                              });
+                            } else {
+                              keyboardEvent.cancelListening();
+                            }
+                          });
+                        },
+                      ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_virtualKeyMap != null)
+                            Table(
+                              border: TableBorder.all(
+                                color: Colors.black38,
+                              ),
+                              columnWidths: {
+                                0: FixedColumnWidth(150),
+                                1: FixedColumnWidth(40),
+                              },
+                              children: [
+                                for (var item in _virtualKeyMap.entries)
+                                  TableRow(
+                                    key: ValueKey(item.key),
+                                    children: [
+                                      Padding(
+                                        padding:
+                                            EdgeInsets.symmetric(horizontal: 5),
+                                        child: Text(item.key),
+                                      ),
+                                      Padding(
+                                        padding:
+                                            EdgeInsets.symmetric(horizontal: 5),
+                                        child: Text(item.value.toString()),
+                                      ),
+                                    ],
+                                  )
+                              ],
+                            ),
+                          if (_virtualKey2StrMap != null)
+                            SizedBox(
+                              width: 20,
+                            ),
+                          if (_virtualKey2StrMap != null)
+                            Table(
+                              border: TableBorder.all(
+                                color: Colors.black38,
+                              ),
+                              columnWidths: {
+                                0: FixedColumnWidth(40),
+                                1: FixedColumnWidth(150),
+                              },
+                              children: [
+                                for (var item
+                                    in _virtualKey2StrMap.keys.toList()..sort())
+                                  TableRow(
+                                    key: ValueKey(item),
+                                    children: [
+                                      Padding(
+                                        padding:
+                                            EdgeInsets.symmetric(horizontal: 5),
+                                        child: Text(item.toString()),
+                                      ),
+                                      Padding(
+                                        padding:
+                                            EdgeInsets.symmetric(horizontal: 5),
+                                        child: Text(
+                                            (_virtualKey2StrMap[item].length ==
+                                                    1)
+                                                ? _virtualKey2StrMap[item][0]
+                                                : _virtualKey2StrMap[item]
+                                                    .join(', \n')
+                                                    .toString()),
+                                      ),
+                                    ],
+                                  )
+                              ],
+                            ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 20,
+                      ),
+                    ],
+                  ),
                 ],
               ),
             );
