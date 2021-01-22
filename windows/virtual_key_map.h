@@ -1,8 +1,11 @@
+#if !defined(__VIRTUAL_KEY_MAP_H__)
+#define __VIRTUAL_KEY_MAP_H__
+
 #include <windows.h>
 
 #include <map>
 
-std::map<std::string, int> virtualKeyMap = {
+std::map<std::string, int> _virtualKeyName2CodeMap = {
     // clang-format off
 // "C:\Program Files (x86)\Windows Kits\10\Include\10.0.18362.0\um\WinUser.h".
 // between MACRO NOVIRTUALKEYCODES 
@@ -333,3 +336,38 @@ std::map<std::string, int> virtualKeyMap = {
  */
     // clang-format on
 };
+
+constexpr const std::map<std::string, int> &virtualKeyName2CodeMap_init() {
+  //添加缺漏
+  /*
+   * VK_0 - VK_9 are the same as ASCII '0' - '9' (0x30 - 0x39)
+   * 0x3A - 0x40 : unassigned
+   * VK_A - VK_Z are the same as ASCII 'A' - 'Z' (0x41 - 0x5A)
+   */
+  char ch[2] = {0, 0};
+  for (int i = 0; i < 10; i++) {
+    ch[0] = (char)('0' + i);
+    _virtualKeyName2CodeMap[std::string(ch)] = 0x30 + i;
+  }
+  for (int i = 0; i < 26; i++) {
+    ch[0] = (char)('A' + i);
+    _virtualKeyName2CodeMap[std::string(ch)] = 0x41 + i;
+  }
+  return _virtualKeyName2CodeMap;
+}
+const std::map<std::string, int> &virtualKeyName2CodeMap =
+    virtualKeyName2CodeMap_init();
+
+std::map<int, std::string> _virtualKeyCode2NameMap = {};
+
+const std::map<int, std::string> &virtualKeyCode2NameMap_init() {
+  std::for_each(virtualKeyName2CodeMap.cbegin(), virtualKeyName2CodeMap.cend(),
+                [](std::pair<std::string, int> element) {
+                  _virtualKeyCode2NameMap[element.second] = element.first;
+                });
+  return _virtualKeyCode2NameMap;
+}
+const std::map<int, std::string> &virtualKeyCode2NameMap =
+    virtualKeyCode2NameMap_init();
+
+#endif  // __VIRTUAL_KEY_MAP_H__

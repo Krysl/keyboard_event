@@ -4,16 +4,16 @@ project(${PROJECT_NAME} LANGUAGES CXX)
 
 # MESSAGE("CMAKE_CXX_STANDARD= " ${CMAKE_CXX_STANDARD})
 
-if(NOT CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 14)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif()
+# if(NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 20)
+#     set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# endif()
 
 add_definitions(
   -D_HAS_EXCEPTIONS=1  # error LNK2019: std::bad_cast
 )
 
-add_compile_options(/utf-8)
+add_compile_options(/utf-8 /std:c++latest)
 # set(ENV{CMAKE_PREFIX_PATH} "D:/Program Files/CMake")
 # set(ENV{CMAKE_MODULE_PATH} "D:/Program Files/CMake")
 # MESSAGE("CMAKE_PREFIX_PATH= " $ENV{CMAKE_PREFIX_PATH})
@@ -29,6 +29,7 @@ add_library(${PLUGIN_NAME} SHARED
   "map_serializer.cpp"
   "keyboard_event_plugin.cpp"
   "keyboard_event.cpp"
+  "map_serializer.h"
   "codeconvert.cpp"
   "timestamp.h"
 )

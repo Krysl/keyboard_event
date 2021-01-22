@@ -58,24 +58,6 @@ void log_init() {
 #endif
 }
 
-void virtualKeyMap_init() {
-  //添加缺漏
-  /*
-   * VK_0 - VK_9 are the same as ASCII '0' - '9' (0x30 - 0x39)
-   * 0x3A - 0x40 : unassigned
-   * VK_A - VK_Z are the same as ASCII 'A' - 'Z' (0x41 - 0x5A)
-   */
-  char ch[2] = {0, 0};
-  for (int i = 0; i < 10; i++) {
-    ch[0] = (char)('0' + i);
-    virtualKeyMap[std::string(ch)] = 0x30 + i;
-  }
-  for (int i = 0; i < 26; i++) {
-    ch[0] = (char)('A' + i);
-    virtualKeyMap[std::string(ch)] = 0x41 + i;
-  }
-}
-
 namespace {
 std::unique_ptr<flutter::MethodChannel<>> channel = NULL;
 std::unique_ptr<flutter::EventChannel<>> eventChannel = NULL;
@@ -208,7 +190,6 @@ std::unique_ptr<StreamHandlerError<T>> KeyboardEventOnError(
 // static
 void KeyboardEventPlugin::RegisterWithRegistrar(
     flutter::PluginRegistrarWindows *registrar) {
-  virtualKeyMap_init();
   StandardCodecSerializer *serializer = new MapSerializer();
   channel = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
       registrar->messenger(), "keyboard_event",
@@ -261,7 +242,7 @@ void KeyboardEventPlugin::HandleMethodCall(
     result->Success(flutter::EncodableValue(version_stream.str()));
     debug(version_stream.str());
   } else if (method_call.method_name().compare(kGetVirtualKeyMapMethod) == 0) {
-    result->Success(CustomEncodableValue(MapData(virtualKeyMap)));
+    result->Success(CustomEncodableValue(MapData(virtualKeyName2CodeMap)));
   } else {
     debug("%s Not Implemented\n", method_call.method_name().c_str());
     result->NotImplemented();
