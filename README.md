@@ -1,15 +1,14 @@
 # keyboard_event
 
-A new flutter plugin project.
+Flutter Plugin for Windows to catch **ALL** keyboard events, even if you are using other programs;
+
+
+This Plugin use Windows 's [`SetWindowsHookEx`](https://docs.microsoft.com/zh-cn/windows/win32/api/winuser/nf-winuser-setwindowshookexa?redirectedfrom=MSDN) API. click the links for details.
+> WH_KEYBOARD_LL :  
+> Installs a hook procedure that monitors low-level keyboard input events. For more information, see the [LowLevelKeyboardProc](https://docs.microsoft.com/en-us/previous-versions/windows/desktop/legacy/ms644985(v=vs.85)) hook procedure.
+
 
 ## Getting Started
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+See [example demo](./example)
 
