@@ -20,24 +20,14 @@ class _MyAppState extends State<MyApp> {
   List<String> _err = [];
   List<String> _event = [];
   KeyboardEvent keyboardEvent;
+  int eventNum = 0;
   bool listenIsOn = false;
 
   @override
   void initState() {
     super.initState();
     initPlatformState();
-    keyboardEvent = KeyboardEvent(
-      onLog: (str) => setState(() {
-        if (str == '<Enter>')
-          _event.last += '\n';
-        else if (str == '<Backspace>') //
-          _event.removeLast();
-        if (str == '<F5>')
-          _event.clear();
-        else
-          _event.add(str);
-      }),
-    );
+    keyboardEvent = KeyboardEvent();
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -54,13 +44,13 @@ class _MyAppState extends State<MyApp> {
     }
 
     try {
-      virtualKeyMap = await KeyboardEvent.getVirtualKeyString2CodeMap;
+      virtualKeyMap = await KeyboardEvent.virtualKeyString2CodeMap;
     } on PlatformException {
       err.add('Failed to get Virtual-Key Map.');
     }
 
     try {
-      virtualKeyMap2 = await KeyboardEvent.getVirtualKeyCode2StringMap;
+      virtualKeyMap2 = await KeyboardEvent.virtualKeyCode2StringMap;
     } on PlatformException {
       err.add('Failed to get Virtual-Key Map.');
     }
@@ -97,32 +87,52 @@ class _MyAppState extends State<MyApp> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('运行于: $_platformVersion'),
-                      Text('event: $_event'),
-                      Switch(
-                        value: listenIsOn,
-                        onChanged: (bool newValue) {
-                          setState(() {
-                            listenIsOn = newValue;
-                            if (listenIsOn == true) {
-                              keyboardEvent.startListening((msg) {
-                                if (_virtualKey2StrMap != null) {
-                                  setState(() {
-                                    var list = List<int>.from(msg);
-                                    _event.add(_virtualKey2StrMap[list[1]][0] ??
-                                        'Unknow Key ${list[1]}');
+                      Row(
+                        children: [
+                          Text('点击按钮切换键盘监听: '),
+                          Switch(
+                            value: listenIsOn,
+                            onChanged: (bool newValue) {
+                              setState(() {
+                                listenIsOn = newValue;
+                                if (listenIsOn == true) {
+                                  keyboardEvent.startListening((keyEvent) {
+                                    if (_virtualKey2StrMap != null) {
+                                      setState(() {
+                                        eventNum++;
+                                        if (keyEvent.vkName == 'ENTER')
+                                          _event.last += '\n';
+                                        else if (keyEvent.vkName == 'BACK')
+                                          _event.removeLast();
+                                        if (keyEvent.vkName == 'F5')
+                                          _event.clear();
+                                        else
+                                          _event.add(keyEvent.toString());
+                                        if (_event.length > 20)
+                                          _event.removeAt(0);
+                                      });
+                                    }
+                                    debugPrint(keyEvent.toString());
                                   });
+                                } else {
+                                  keyboardEvent.cancelListening();
                                 }
-                                debugPrint(msg.toString());
                               });
-                            } else {
-                              keyboardEvent.cancelListening();
-                            }
-                          });
-                        },
+                            },
+                          ),
+                        ],
                       ),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          ConstrainedBox(
+                            constraints: BoxConstraints.tightFor(width: 200),
+                            child: Text(
+                              "监听到的键盘事件：${eventNum}\n${_event.join('\n')}",
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 20,
+                            ),
+                          ),
                           if (_virtualKeyMap != null)
                             Table(
                               border: TableBorder.all(
