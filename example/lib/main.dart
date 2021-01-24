@@ -15,8 +15,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
-  Map<String, int>? _virtualKeyMap;
-  Map<int, List<String>>? _virtualKey2StrMap;
   List<String> _err = [];
   List<String> _event = [];
   late KeyboardEvent keyboardEvent;
@@ -33,8 +31,6 @@ class _MyAppState extends State<MyApp> {
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
     String? platformVersion;
-    Map<String, int>? virtualKeyMap;
-    Map<int, List<String>>? virtualKeyMap2;
     List<String> err = [];
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
@@ -42,17 +38,10 @@ class _MyAppState extends State<MyApp> {
     } on PlatformException {
       err.add('Failed to get platform version.');
     }
-
     try {
-      virtualKeyMap = await KeyboardEvent.virtualKeyString2CodeMap;
+      await KeyboardEvent.init();
     } on PlatformException {
-      err.add('Failed to get Virtual-Key Map.');
-    }
-
-    try {
-      virtualKeyMap2 = await KeyboardEvent.virtualKeyCode2StringMap;
-    } on PlatformException {
-      err.add('Failed to get Virtual-Key Map.');
+      err.add('Failed to get virtual-key map.');
     }
 
     // If the widget was removed from the tree while the asynchronous platform
@@ -62,8 +51,6 @@ class _MyAppState extends State<MyApp> {
 
     setState(() {
       if (platformVersion != null) _platformVersion = platformVersion;
-      if (virtualKeyMap != null) _virtualKeyMap = virtualKeyMap;
-      if (virtualKeyMap2 != null) _virtualKey2StrMap = virtualKeyMap2;
       if (err.isNotEmpty) _err.addAll(err);
     });
   }
@@ -97,22 +84,20 @@ class _MyAppState extends State<MyApp> {
                                 listenIsOn = newValue;
                                 if (listenIsOn == true) {
                                   keyboardEvent.startListening((keyEvent) {
-                                    if (_virtualKey2StrMap != null) {
-                                      setState(() {
-                                        eventNum++;
-                                        if (keyEvent.vkName == 'ENTER')
-                                          _event.last += '\n';
-                                        else if (keyEvent.vkName == 'BACK')
-                                          _event.removeLast();
-                                        if (keyEvent.vkName == 'F5')
-                                          _event.clear();
-                                        else
-                                          _event.add(keyEvent.toString());
-                                        if (_event.length > 20)
-                                          _event.removeAt(0);
-                                      });
-                                    }
-                                    debugPrint(keyEvent.toString());
+                                    setState(() {
+                                      eventNum++;
+                                      if (keyEvent.vkName == 'ENTER')
+                                        _event.last += '\n';
+                                      else if (keyEvent.vkName == 'BACK')
+                                        _event.removeLast();
+                                      if (keyEvent.vkName == 'F5')
+                                        _event.clear();
+                                      else
+                                        _event.add(keyEvent.toString());
+                                      if (_event.length > 20)
+                                        _event.removeAt(0);
+                                      debugPrint(keyEvent.toString());
+                                    });
                                   });
                                 } else {
                                   keyboardEvent.cancelListening();
@@ -133,7 +118,7 @@ class _MyAppState extends State<MyApp> {
                               maxLines: 20,
                             ),
                           ),
-                          if (_virtualKeyMap != null)
+                          if (KeyboardEvent.virtualKeyString2CodeMap != null)
                             Table(
                               border: TableBorder.all(
                                 color: Colors.black38,
@@ -143,7 +128,8 @@ class _MyAppState extends State<MyApp> {
                                 1: FixedColumnWidth(40),
                               },
                               children: [
-                                for (var item in _virtualKeyMap!.entries)
+                                for (var item in KeyboardEvent
+                                    .virtualKeyString2CodeMap!.entries)
                                   TableRow(
                                     key: ValueKey(item.key),
                                     children: [
@@ -161,11 +147,11 @@ class _MyAppState extends State<MyApp> {
                                   )
                               ],
                             ),
-                          if (_virtualKey2StrMap != null)
+                          if (KeyboardEvent.virtualKeyCode2StringMap != null)
                             SizedBox(
                               width: 20,
                             ),
-                          if (_virtualKey2StrMap != null)
+                          if (KeyboardEvent.virtualKeyCode2StringMap != null)
                             Table(
                               border: TableBorder.all(
                                 color: Colors.black38,
@@ -175,8 +161,9 @@ class _MyAppState extends State<MyApp> {
                                 1: FixedColumnWidth(150),
                               },
                               children: [
-                                for (var item
-                                    in _virtualKey2StrMap!.keys.toList()
+                                for (var item in KeyboardEvent
+                                    .virtualKeyCode2StringMap!.keys
+                                    .toList()
                                       ..sort())
                                   TableRow(
                                     key: ValueKey(item),
@@ -189,13 +176,10 @@ class _MyAppState extends State<MyApp> {
                                       Padding(
                                         padding:
                                             EdgeInsets.symmetric(horizontal: 5),
-                                        child: Text((_virtualKey2StrMap![item]!
-                                                    .length ==
-                                                1)
-                                            ? _virtualKey2StrMap![item]![0]
-                                            : _virtualKey2StrMap![item]!
-                                                .join(', \n')
-                                                .toString()),
+                                        child: Text(KeyboardEvent
+                                            .virtualKeyCode2StringMap![item]!
+                                            .join(', \n')
+                                            .toString()),
                                       ),
                                     ],
                                   )
