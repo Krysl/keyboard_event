@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-// ignore: import_of_legacy_library_into_null_safe
 import 'package:logger/logger.dart';
 
 const String _kOnLogCallbackMethod = "onLog";
@@ -40,6 +39,7 @@ class KeyEvent {
   late int flags;
   late int time;
   late int dwExtraInfo;
+
   KeyEvent(List<int> list) {
     keyMsg = toKeyEventMsg(list[0]);
     vkCode = list[1];
@@ -78,16 +78,45 @@ typedef void CancelListening();
 
 var log = Logger();
 
+class KeyBoardState {
+  Set<int> state = Set<int>();
+  KeyBoardState();
+  @override
+  String toString() {
+    if (KeyboardEvent._virtualKeyCode2StringMap != null) {
+      var sb = StringBuffer();
+      bool isFirst = true;
+      sb.write('[');
+      for (var key in state) {
+        if (isFirst) {
+          isFirst = false;
+        } else {
+          sb.write(',');
+        }
+        var str = KeyboardEvent._virtualKeyCode2StringMap![key]?[0];
+        sb.write(str != null ? str : key.toString());
+      }
+      sb.write(']');
+      return sb.toString();
+    } else {
+      return state.toString();
+    }
+  }
+}
+
 class KeyboardEvent {
   static const MethodChannel _channel = const MethodChannel('keyboard_event');
   static const EventChannel _eventChannel =
       const EventChannel("keyboard_event/event");
+  KeyBoardState state = KeyBoardState();
   OnLogCallback? onLog;
 
   KeyboardEvent({
     this.onLog,
   }) {
     _channel.setMethodCallHandler(_callbackHandler);
+    virtualKeyString2CodeMap;
+    virtualKeyCode2StringMap;
   }
   static Future<String> get platformVersion async {
     final String version = await _channel.invokeMethod('getPlatformVersion');
@@ -168,6 +197,15 @@ class KeyboardEvent {
             (dynamic msg) {
       var list = List<int>.from(msg);
       var keyEvent = KeyEvent(list);
+      if (keyEvent.isKeyDown) {
+        if (!state.state.contains(keyEvent.vkCode)) {
+          state.state.add(keyEvent.vkCode);
+        }
+      } else {
+        if (state.state.contains(keyEvent.vkCode)) {
+          state.state.remove(keyEvent.vkCode);
+        }
+      }
       listener(keyEvent);
     }, cancelOnError: true);
     debugPrint("keyboard_event/event startListening");

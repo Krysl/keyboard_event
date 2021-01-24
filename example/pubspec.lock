@@ -137,7 +137,7 @@ packages:
       name: logger
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "0.9.4"
+    version: "1.0.0-nullsafety.0"
   matcher:
     dependency: transitive
     description:

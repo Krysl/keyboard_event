@@ -15,11 +15,11 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
-  Map<String, int> _virtualKeyMap;
-  Map<int, List<String>> _virtualKey2StrMap;
+  Map<String, int>? _virtualKeyMap;
+  Map<int, List<String>>? _virtualKey2StrMap;
   List<String> _err = [];
   List<String> _event = [];
-  KeyboardEvent keyboardEvent;
+  late KeyboardEvent keyboardEvent;
   int eventNum = 0;
   bool listenIsOn = false;
 
@@ -32,9 +32,9 @@ class _MyAppState extends State<MyApp> {
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
-    String platformVersion;
-    Map<String, int> virtualKeyMap;
-    Map<int, List<String>> virtualKeyMap2;
+    String? platformVersion;
+    Map<String, int>? virtualKeyMap;
+    Map<int, List<String>>? virtualKeyMap2;
     List<String> err = [];
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
@@ -128,7 +128,7 @@ class _MyAppState extends State<MyApp> {
                           ConstrainedBox(
                             constraints: BoxConstraints.tightFor(width: 200),
                             child: Text(
-                              "监听到的键盘事件：${eventNum}\n${_event.join('\n')}",
+                              "监听到的键盘事件：$eventNum ${keyboardEvent.state.toString()}\n${_event.join('\n')}",
                               overflow: TextOverflow.ellipsis,
                               maxLines: 20,
                             ),
@@ -143,7 +143,7 @@ class _MyAppState extends State<MyApp> {
                                 1: FixedColumnWidth(40),
                               },
                               children: [
-                                for (var item in _virtualKeyMap.entries)
+                                for (var item in _virtualKeyMap!.entries)
                                   TableRow(
                                     key: ValueKey(item.key),
                                     children: [
@@ -176,7 +176,8 @@ class _MyAppState extends State<MyApp> {
                               },
                               children: [
                                 for (var item
-                                    in _virtualKey2StrMap.keys.toList()..sort())
+                                    in _virtualKey2StrMap!.keys.toList()
+                                      ..sort())
                                   TableRow(
                                     key: ValueKey(item),
                                     children: [
@@ -188,13 +189,13 @@ class _MyAppState extends State<MyApp> {
                                       Padding(
                                         padding:
                                             EdgeInsets.symmetric(horizontal: 5),
-                                        child: Text(
-                                            (_virtualKey2StrMap[item].length ==
-                                                    1)
-                                                ? _virtualKey2StrMap[item][0]
-                                                : _virtualKey2StrMap[item]
-                                                    .join(', \n')
-                                                    .toString()),
+                                        child: Text((_virtualKey2StrMap![item]!
+                                                    .length ==
+                                                1)
+                                            ? _virtualKey2StrMap![item]![0]
+                                            : _virtualKey2StrMap![item]!
+                                                .join(', \n')
+                                                .toString()),
                                       ),
                                     ],
                                   )
