@@ -1,7 +1,10 @@
 #include <windows.h>
 
 #include "codeconvert.h"
+
+#ifdef KEYEVENT_DEBUG
 #include "spdlog/spdlog.h"
+#endif
 
 /**
  * ===
@@ -76,6 +79,7 @@ UINT getCodePage() {
     _codePage = 936;
   } else {
     _codePage = 0;
+#ifdef KEYEVENT_DEBUG
     spdlog::info("str={}, size={}", _str, str.size());
     for (size_t i = 0; i < str.size(); i++) {
       spdlog::info("[{}] {}", i, _str[i]);
@@ -83,6 +87,7 @@ UINT getCodePage() {
 
     spdlog::error(
         "当前代码页既不是GBK，也不是UTF-8! 检查下环境变量 CL 是不是 /utf-8。");
+#endif
   }
   return _codePage;
 }

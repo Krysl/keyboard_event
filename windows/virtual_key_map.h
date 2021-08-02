@@ -4,6 +4,7 @@
 #include <windows.h>
 
 #include <map>
+#include <algorithm>
 
 #include <flutter/encodable_value.h>
 

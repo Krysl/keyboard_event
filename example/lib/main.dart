@@ -5,18 +5,20 @@ import 'package:flutter/services.dart';
 import 'package:keyboard_event/keyboard_event.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   _MyAppState createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
-  List<String> _err = [];
-  List<String> _event = [];
+  final List<String> _err = [];
+  final List<String> _event = [];
   late KeyboardEvent keyboardEvent;
   int eventNum = 0;
   bool listenIsOn = false;
@@ -67,7 +69,7 @@ class _MyAppState extends State<MyApp> {
             return SingleChildScrollView(
               child: Row(
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 20,
                   ),
                   Column(
@@ -76,7 +78,7 @@ class _MyAppState extends State<MyApp> {
                       Text('运行于: $_platformVersion'),
                       Row(
                         children: [
-                          Text('点击按钮切换键盘监听: '),
+                          const Text('点击按钮切换键盘监听: '),
                           Switch(
                             value: listenIsOn,
                             onChanged: (bool newValue) {
@@ -86,16 +88,19 @@ class _MyAppState extends State<MyApp> {
                                   keyboardEvent.startListening((keyEvent) {
                                     setState(() {
                                       eventNum++;
-                                      if (keyEvent.vkName == 'ENTER')
+                                      if (keyEvent.vkName == 'ENTER') {
                                         _event.last += '\n';
-                                      else if (keyEvent.vkName == 'BACK')
+                                      } else if (keyEvent.vkName == 'BACK') {
                                         _event.removeLast();
-                                      if (keyEvent.vkName == 'F5')
+                                      }
+                                      if (keyEvent.vkName == 'F5') {
                                         _event.clear();
-                                      else
+                                      } else {
                                         _event.add(keyEvent.toString());
-                                      if (_event.length > 20)
+                                      }
+                                      if (_event.length > 20) {
                                         _event.removeAt(0);
+                                      }
                                       debugPrint(keyEvent.toString());
                                     });
                                   });
@@ -111,7 +116,7 @@ class _MyAppState extends State<MyApp> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           ConstrainedBox(
-                            constraints: BoxConstraints.tightFor(width: 200),
+                            constraints: const BoxConstraints.tightFor(width: 200),
                             child: Text(
                               "监听到的键盘事件：$eventNum ${keyboardEvent.state.toString()}\n${_event.join('\n')}",
                               overflow: TextOverflow.ellipsis,
@@ -123,7 +128,7 @@ class _MyAppState extends State<MyApp> {
                               border: TableBorder.all(
                                 color: Colors.black38,
                               ),
-                              columnWidths: {
+                              columnWidths: const {
                                 0: FixedColumnWidth(150),
                                 1: FixedColumnWidth(40),
                               },
@@ -135,12 +140,12 @@ class _MyAppState extends State<MyApp> {
                                     children: [
                                       Padding(
                                         padding:
-                                            EdgeInsets.symmetric(horizontal: 5),
+                                            const EdgeInsets.symmetric(horizontal: 5),
                                         child: Text(item.key),
                                       ),
                                       Padding(
                                         padding:
-                                            EdgeInsets.symmetric(horizontal: 5),
+                                            const EdgeInsets.symmetric(horizontal: 5),
                                         child: Text(item.value.toString()),
                                       ),
                                     ],
@@ -148,7 +153,7 @@ class _MyAppState extends State<MyApp> {
                               ],
                             ),
                           if (KeyboardEvent.virtualKeyCode2StringMap != null)
-                            SizedBox(
+                            const SizedBox(
                               width: 20,
                             ),
                           if (KeyboardEvent.virtualKeyCode2StringMap != null)
@@ -156,7 +161,7 @@ class _MyAppState extends State<MyApp> {
                               border: TableBorder.all(
                                 color: Colors.black38,
                               ),
-                              columnWidths: {
+                              columnWidths: const {
                                 0: FixedColumnWidth(40),
                                 1: FixedColumnWidth(150),
                               },
@@ -170,12 +175,12 @@ class _MyAppState extends State<MyApp> {
                                     children: [
                                       Padding(
                                         padding:
-                                            EdgeInsets.symmetric(horizontal: 5),
+                                            const EdgeInsets.symmetric(horizontal: 5),
                                         child: Text(item.toString()),
                                       ),
                                       Padding(
                                         padding:
-                                            EdgeInsets.symmetric(horizontal: 5),
+                                            const EdgeInsets.symmetric(horizontal: 5),
                                         child: Text(KeyboardEvent
                                             .virtualKeyCode2StringMap![item]!
                                             .join(', \n')
@@ -187,7 +192,7 @@ class _MyAppState extends State<MyApp> {
                             ),
                         ],
                       ),
-                      SizedBox(
+                      const SizedBox(
                         height: 20,
                       ),
                     ],

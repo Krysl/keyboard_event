@@ -8,3 +8,4 @@ build/
 
 BROWSE.VC.DB*
 log.txt
+.vscode/settings.json

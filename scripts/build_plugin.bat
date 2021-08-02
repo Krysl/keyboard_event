@@ -1,4 +1,4 @@
-cmake --build  example\build\windows\plugins\keyboard_event
+cmake --build  example\build\windows\plugins\keyboard_event --config Release
 
 ls example\build\windows\runner\Debug\
 

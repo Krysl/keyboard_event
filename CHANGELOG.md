@@ -1,3 +1,9 @@
+## 0.3.1
+- remove spdlog depedence for normal user
+  - developer can set variable `KEYEVENT_DEBUG` to `ON` 
+    in `windows\CMakeLists.txt` to enable it
+    - spdlog will be auto downlowd and compile when you compile this plugin
+
 ## 0.3.0-0
 - make `_virtualKeyString2CodeMap`,`_virtualKeyCode2StringMap`
  public (remove`_`) for the names
