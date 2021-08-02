@@ -1,0 +1,8 @@
+third_party/spdlog
+pubspec.lock
+example/build/
+example/.dart_tool/
+example/.packages/
+example/windows/flutter/ephemeral/
+example/.flutter-plugins-dependencies
+example/.flutter-plugins
