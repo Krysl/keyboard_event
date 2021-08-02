@@ -13,7 +13,7 @@ add_definitions(
   -D_HAS_EXCEPTIONS=1  # error LNK2019: std::bad_cast
 )
 
-add_compile_options(/utf-8 /std:c++latest)
+add_compile_options(/utf-8 /std:c++latest /bigobj)
 # set(ENV{CMAKE_PREFIX_PATH} "D:/Program Files/CMake")
 # set(ENV{CMAKE_MODULE_PATH} "D:/Program Files/CMake")
 # MESSAGE("CMAKE_PREFIX_PATH= " $ENV{CMAKE_PREFIX_PATH})
@@ -23,7 +23,27 @@ add_compile_options(/utf-8 /std:c++latest)
 # not be changed
 set(PLUGIN_NAME "keyboard_event_plugin")
 
-find_package(spdlog REQUIRED)
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/spdlog/CMakeLists.txt")
+  message(FATAL_ERROR "The submodules were not downloaded! Trying to update submodules ...")
+    find_package(Git QUIET)
+    if(GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../.git")
+    # Update submodules as needed
+        option(GIT_SUBMODULE "Check submodules during build" ON)
+        if(GIT_SUBMODULE)
+            message(STATUS "Submodule update")
+            execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                            RESULT_VARIABLE GIT_SUBMOD_RESULT)
+            if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+                message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+            endif()
+        endif()
+    endif()
+    message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+endif()
+
+add_subdirectory("../third_party/spdlog" "../third_party/bin")
+include_directories("../third_party/spdlog/include")
 
 add_library(${PLUGIN_NAME} SHARED
   "map_serializer.cpp"
