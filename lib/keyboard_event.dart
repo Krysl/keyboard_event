@@ -8,6 +8,7 @@ import 'package:logger/logger.dart';
 const String _kOnLogCallbackMethod = "onLog";
 typedef OnLogCallback = void Function(String str);
 
+// ignore: constant_identifier_names
 enum KeyEventMsg { WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP, WM_UNKNOW }
 
 KeyEventMsg toKeyEventMsg(int v) {
@@ -56,8 +57,7 @@ class KeyEvent {
       (keyMsg == KeyEventMsg.WM_SYSKEYUP) ||
       (keyMsg == KeyEventMsg.WM_SYSKEYDOWN);
 
-  String? get vkName =>
-      KeyboardEvent.virtualKeyCode2StringMap?[this.vkCode]?[0];
+  String? get vkName => KeyboardEvent.virtualKeyCode2StringMap?[vkCode]?[0];
 
   bool? get isLeter => KeyboardEvent.isLeter(vkCode);
   bool? get isNumber => KeyboardEvent.isNumber(vkCode);
@@ -70,19 +70,19 @@ class KeyEvent {
     if (map != null) {
       name = map[vkCode]?[0];
     }
-    if (name == null) name = '<Unknow Key $vkCode>';
+    name ??= '<Unknow Key $vkCode>';
     sb.write('KeyEvent ${isKeyUP ? "↑" : "↓"}$name');
     return sb.toString();
   }
 }
 
-typedef void Listener(KeyEvent keyEvent);
-typedef void CancelListening();
+typedef Listener = void Function(KeyEvent keyEvent);
+typedef CancelListening = void Function();
 
 var log = Logger();
 
 class KeyBoardState {
-  Set<int> state = Set<int>();
+  Set<int> state = <int>{};
   KeyBoardState();
   @override
   String toString() {
@@ -97,7 +97,7 @@ class KeyBoardState {
           sb.write(',');
         }
         var str = KeyboardEvent.virtualKeyCode2StringMap![key]?[0];
-        sb.write(str != null ? str : key.toString());
+        sb.write(str ?? key.toString());
       }
       sb.write(']');
       return sb.toString();
@@ -108,9 +108,9 @@ class KeyBoardState {
 }
 
 class KeyboardEvent {
-  static const MethodChannel _channel = const MethodChannel('keyboard_event');
+  static const MethodChannel _channel = MethodChannel('keyboard_event');
   static const EventChannel _eventChannel =
-      const EventChannel("keyboard_event/event");
+      EventChannel("keyboard_event/event");
   KeyBoardState state = KeyBoardState();
   OnLogCallback? onLog;
 
@@ -179,10 +179,11 @@ class KeyboardEvent {
     if (KeyboardEvent.virtualKeyCode2StringMap != null) {
       var A = KeyboardEvent.virtualKeyString2CodeMap!['A'];
       var Z = KeyboardEvent.virtualKeyString2CodeMap!['Z'];
-      if ((vk >= A!) && (vk <= Z!))
+      if ((vk >= A!) && (vk <= Z!)) {
         return true;
-      else
+      } else {
         return false;
+      }
     }
     return null;
   }
@@ -191,10 +192,11 @@ class KeyboardEvent {
     if (KeyboardEvent.virtualKeyCode2StringMap != null) {
       var key_0 = KeyboardEvent.virtualKeyString2CodeMap!['0'];
       var key_9 = KeyboardEvent.virtualKeyString2CodeMap!['9'];
-      if ((vk >= key_0!) && (vk <= key_9!))
+      if ((vk >= key_0!) && (vk <= key_9!)) {
         return true;
-      else
+      } else {
         return false;
+      }
     }
     return null;
   }

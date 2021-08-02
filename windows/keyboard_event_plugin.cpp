@@ -19,11 +19,14 @@
 #include <map>
 #include <memory>
 #include <sstream>
-#include "spdlog/spdlog.h"
+
+#ifdef KEYEVENT_DEBUG
+#include "spdlog/spdlog.h" // spdlog.h must be above `bin_to_hex.h`. DO NOT delete blank line below
 
 #include "spdlog/fmt/bin_to_hex.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
+#endif
 
 #include "codeconvert.h"
 #include "keyboard_event_plugin.h"
@@ -31,14 +34,20 @@
 #include "timestamp.h"
 #include "virtual_key_map.h"
 
-using namespace spdlog;
-using namespace fmt::literals;
+#ifdef KEYEVENT_DEBUG
+#define debug(...) spdlog::debug(__VA_ARGS__);
+#define error(...) spdlog::error(__VA_ARGS__);
+#else
+#define debug(...)
+#define error(...)
+#endif
+
 using namespace flutter;
 
 HHOOK kbdhook;
 
 void log_init() {
-#ifdef _DEBUG
+#ifdef KEYEVENT_DEBUG
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
   console_sink->set_level(spdlog::level::debug);
   console_sink->set_pattern("[keyboard_event] [%^%l%$] %v");
@@ -50,9 +59,10 @@ void log_init() {
   set_default_logger(std::make_shared<spdlog::logger>(
       "multi_sink",
       std::initializer_list<spdlog::sink_ptr>{console_sink, file_sink}));
-  set_level(spdlog::level::debug);
-  warn("this should appear in both console and file");
-  info("this message should not appear in the console, only in the file");
+  spdlog::set_level(spdlog::level::debug);
+  spdlog::warn("this should appear in both console and file");
+  spdlog::info(
+      "this message should not appear in the console, only in the file");
 #endif
 }
 
@@ -76,7 +86,7 @@ class KeyboardEventPlugin : public flutter::Plugin {
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
   static const char kOnLogCallbackMethod[];
   static const char kGetVirtualKeyMapMethod[];
-#ifdef _DEBUG
+#ifdef KEYEVENT_DEBUG
   UINT _codePage;
 #endif
 };
@@ -145,7 +155,7 @@ void KeyboardHookEnable(std::unique_ptr<EventSink<T>> &&events) {
     eventSink = std::move(events);
   }
 
-  kbdhook = SetWindowsHookEx(WH_KEYBOARD_LL, llKeyboardProc, hInstance, NULL);  
+  kbdhook = SetWindowsHookEx(WH_KEYBOARD_LL, llKeyboardProc, hInstance, NULL);
 }
 
 void KeyboardHookDisable() {
@@ -215,7 +225,7 @@ void KeyboardEventPlugin::RegisterWithRegistrar(
 }
 
 KeyboardEventPlugin::KeyboardEventPlugin() {
-#ifdef _DEBUG
+#ifdef KEYEVENT_DEBUG
   _codePage = getCodePage();
 #endif
   // KeyboardHookEnable();
