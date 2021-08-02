@@ -57,12 +57,15 @@ class KeyEvent {
       (keyMsg == KeyEventMsg.WM_SYSKEYDOWN);
 
   String? get vkName =>
-      KeyboardEvent._virtualKeyCode2StringMap?[this.vkCode]?[0];
+      KeyboardEvent.virtualKeyCode2StringMap?[this.vkCode]?[0];
+
+  bool? get isLeter => KeyboardEvent.isLeter(vkCode);
+  bool? get isNumber => KeyboardEvent.isNumber(vkCode);
 
   @override
   String toString() {
     var sb = StringBuffer();
-    var map = KeyboardEvent._virtualKeyCode2StringMap;
+    var map = KeyboardEvent.virtualKeyCode2StringMap;
     String? name;
     if (map != null) {
       name = map[vkCode]?[0];
@@ -83,7 +86,7 @@ class KeyBoardState {
   KeyBoardState();
   @override
   String toString() {
-    if (KeyboardEvent._virtualKeyCode2StringMap != null) {
+    if (KeyboardEvent.virtualKeyCode2StringMap != null) {
       var sb = StringBuffer();
       bool isFirst = true;
       sb.write('[');
@@ -93,7 +96,7 @@ class KeyBoardState {
         } else {
           sb.write(',');
         }
-        var str = KeyboardEvent._virtualKeyCode2StringMap![key]?[0];
+        var str = KeyboardEvent.virtualKeyCode2StringMap![key]?[0];
         sb.write(str != null ? str : key.toString());
       }
       sb.write(']');
@@ -115,23 +118,20 @@ class KeyboardEvent {
     this.onLog,
   }) {
     _channel.setMethodCallHandler(_callbackHandler);
-    virtualKeyString2CodeMap;
-    virtualKeyCode2StringMap;
   }
+  static Future<void> init() async {
+    virtualKeyString2CodeMap = await _getVirtualKeyString2CodeMap;
+    virtualKeyCode2StringMap = await _getVirtualKeyCode2StringMap;
+  }
+
   static Future<String> get platformVersion async {
     final String version = await _channel.invokeMethod('getPlatformVersion');
     return version;
   }
 
-  static Map<String, int>? _virtualKeyString2CodeMap;
-
-  static Future<Map<String, int>> get _getVirtualKeyString2CodeMap async {
-    final Map<String, int> virtualKeyMap = Map<String, int>.from(
-        await _channel.invokeMethod('getVirtualKeyMap', 0));
-    return virtualKeyMap;
-  }
-
   /// Get Virturl-Key Map
+  ///
+  /// The `await KeyboardEvent.init()` **MUST** be ran before use this
   ///
   /// See details:
   /// "[Virtual-Key Codes](https://docs.microsoft.com/en-us/windows/desktop/inputdev/virtual-key-codes)"
@@ -142,14 +142,28 @@ class KeyboardEvent {
   ///   'Virturl-Key Name': int Virturl-Key Code,
   /// }
   /// ```
-  static Future<Map<String, int>> get virtualKeyString2CodeMap async {
-    if (_virtualKeyString2CodeMap == null) {
-      _virtualKeyString2CodeMap = await _getVirtualKeyString2CodeMap;
-    }
-    return _virtualKeyString2CodeMap!;
+  static Map<String, int>? virtualKeyString2CodeMap;
+
+  static Future<Map<String, int>> get _getVirtualKeyString2CodeMap async {
+    final Map<String, int> virtualKeyMap = Map<String, int>.from(
+        await _channel.invokeMethod('getVirtualKeyMap', 0));
+    return virtualKeyMap;
   }
 
-  static Map<int, List<String>>? _virtualKeyCode2StringMap;
+  /// Virturl-Key Map
+  ///
+  /// The `await KeyboardEvent.init()` **MUST** be ran before use this
+  ///
+  /// See details:
+  /// "[Virtual-Key Codes](https://docs.microsoft.com/en-us/windows/desktop/inputdev/virtual-key-codes)"
+  ///
+  /// vk -> [name...]
+  /// ```
+  /// {
+  ///   int Virturl-Key Code: ['Virturl-Key Name 1','Virturl-Key Name 2',...],
+  /// }
+  /// ```
+  static Map<int, List<String>>? virtualKeyCode2StringMap;
 
   static Future<Map<int, List<String>>> get _getVirtualKeyCode2StringMap async {
     Map<int, List<String>> ret = {};
@@ -161,22 +175,28 @@ class KeyboardEvent {
     return ret;
   }
 
-  /// Get Virturl-Key Map
-  ///
-  /// See details:
-  /// "[Virtual-Key Codes](https://docs.microsoft.com/en-us/windows/desktop/inputdev/virtual-key-codes)"
-  ///
-  /// vk -> [name...]
-  /// ```
-  /// {
-  ///   int Virturl-Key Code: ['Virturl-Key Name 1','Virturl-Key Name 2',...],
-  /// }
-  /// ```
-  static Future<Map<int, List<String>>> get virtualKeyCode2StringMap async {
-    if (_virtualKeyCode2StringMap == null) {
-      _virtualKeyCode2StringMap = await _getVirtualKeyCode2StringMap;
+  static bool? isLeter(int vk) {
+    if (KeyboardEvent.virtualKeyCode2StringMap != null) {
+      var A = KeyboardEvent.virtualKeyString2CodeMap!['A'];
+      var Z = KeyboardEvent.virtualKeyString2CodeMap!['Z'];
+      if ((vk >= A!) && (vk <= Z!))
+        return true;
+      else
+        return false;
     }
-    return _virtualKeyCode2StringMap!;
+    return null;
+  }
+
+  static bool? isNumber(int vk) {
+    if (KeyboardEvent.virtualKeyCode2StringMap != null) {
+      var key_0 = KeyboardEvent.virtualKeyString2CodeMap!['0'];
+      var key_9 = KeyboardEvent.virtualKeyString2CodeMap!['9'];
+      if ((vk >= key_0!) && (vk <= key_9!))
+        return true;
+      else
+        return false;
+    }
+    return null;
   }
 
   Future<dynamic> _callbackHandler(MethodCall methodCall) async {
