@@ -24,7 +24,7 @@ add_compile_options(/utf-8 /std:c++latest /bigobj)
 set(PLUGIN_NAME "keyboard_event_plugin")
 
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/spdlog/CMakeLists.txt")
-  message(FATAL_ERROR "The submodules were not downloaded! Trying to update submodules ...")
+  message(STATUS "The submodules were not downloaded! Trying to update submodules ...")
     find_package(Git QUIET)
     if(GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../.git")
     # Update submodules as needed
@@ -38,8 +38,9 @@ if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/spdlog/CMakeLists.txt"
                 message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
             endif()
         endif()
+    else()
+        message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
     endif()
-    message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
 endif()
 
 add_subdirectory("../third_party/spdlog" "../third_party/bin")
