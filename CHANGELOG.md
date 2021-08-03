@@ -1,3 +1,6 @@
+## 0.3.2
+- fix `KEYEVENT_DEBUG` enabled build problem when user use pub instead of a git repo
+
 ## 0.3.1
 - remove spdlog depedence for normal user
   - developer can set variable `KEYEVENT_DEBUG` to `ON` 

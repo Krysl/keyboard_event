@@ -1,6 +1,6 @@
 name: keyboard_event
 description: Keyboard event plugin for Flutter Desktop(Windows)
-version: 0.3.1
+version: 0.3.2
 author: Krysl <https://github.com/Krysl>
 homepage: https://github.com/Krysl/keyboard_event
 repository: https://github.com/Krysl/keyboard_event
