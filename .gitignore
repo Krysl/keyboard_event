@@ -9,3 +9,9 @@ build/
 BROWSE.VC.DB*
 log.txt
 .vscode/settings.json
+
+third_party/bin/
+third_party/build/
+third_party/tmp/
+third_party/log/
+third_party/stamp/
