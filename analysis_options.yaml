@@ -2,3 +2,51 @@ include: package:flutter_lints/flutter.yaml
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options
+
+linter:
+  # The lint rules applied to this project can be customized in the
+  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
+  # included above or to enable additional rules. A list of all available lints
+  # and their documentation is published at
+  # https://dart-lang.github.io/linter/lints/index.html.
+  #
+  # Instead of disabling a lint rule for the entire project in the
+  # section below, it can also be suppressed for a single line of code
+  # or a specific dart file by using the `// ignore: name_of_lint` and
+  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
+  # producing the lint.
+  rules:
+    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
+    directives_ordering: true
+    prefer_single_quotes: true # Uncomment to enable the `prefer_single_quotes` rule
+    prefer_relative_imports: true
+    avoid_relative_lib_imports: true
+    package_api_docs: true
+    prefer_final_in_for_each: true
+    prefer_interpolation_to_compose_strings: true
+    unnecessary_lambdas: true
+    # prefer_expression_function_bodies: true
+    join_return_with_assignment: true
+    avoid_catches_without_on_clauses: true
+    avoid_catching_errors: true
+    one_member_abstracts: true
+    avoid_classes_with_only_static_members: true
+    prefer_mixin: true
+    use_setters_to_change_properties: true
+    avoid_setters_without_getters: true
+    avoid_returning_this: true
+    type_annotate_public_apis: true
+    omit_local_variable_types: false
+    always_declare_return_types: true
+    sort_child_properties_last: true
+    unawaited_futures: true
+    avoid_types_on_closure_parameters: false
+    avoid_private_typedef_functions: true
+    avoid_positional_boolean_parameters: true
+    avoid_equals_and_hash_code_on_mutable_classes: true
+    avoid_void_async: true
+    avoid_returning_null_for_future: true
+    invalid_annotation_target: true # for freezed
+
+# Additional information about this file can be found at
+# https://dart.dev/guides/language/analysis-options

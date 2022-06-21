@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 
 import 'package:logger/logger.dart';
 
-const String _kOnLogCallbackMethod = "onLog";
+import 'flags.dart';
+
+const String _kOnLogCallbackMethod = 'onLog';
 typedef OnLogCallback = void Function(String str);
 
 // ignore: constant_identifier_names
@@ -33,6 +35,15 @@ KeyEventMsg toKeyEventMsg(int v) {
   return keyMsg;
 }
 
+String toBinary(int num, [int len = 8]) {
+  StringBuffer buf = StringBuffer();
+  if (len < 0) throw ArgumentError('len() should >=0');
+  while (--len >= 0) {
+    buf.write((num & (0x1 << len)) > 0 ? '1' : '0');
+  }
+  return buf.toString();
+}
+
 class KeyEvent {
   late KeyEventMsg keyMsg;
   late int vkCode;
@@ -50,12 +61,15 @@ class KeyEvent {
     dwExtraInfo = list[5];
   }
 
-  bool get isKeyUP =>
-      (keyMsg == KeyEventMsg.WM_KEYUP) || (keyMsg == KeyEventMsg.WM_SYSKEYUP);
+  bool get isKeyUP => (keyMsg == KeyEventMsg.WM_KEYUP) || (keyMsg == KeyEventMsg.WM_SYSKEYUP) || isReleased;
   bool get isKeyDown => !isKeyUP;
-  bool get isSysKey =>
-      (keyMsg == KeyEventMsg.WM_SYSKEYUP) ||
-      (keyMsg == KeyEventMsg.WM_SYSKEYDOWN);
+  bool get isSysKey => (keyMsg == KeyEventMsg.WM_SYSKEYUP) || (keyMsg == KeyEventMsg.WM_SYSKEYDOWN);
+
+  bool get isExtended => 0 != (flags & LLKHF_EXTENDED);
+  bool get isLowerIlInjected => 0 != (flags & LLKHF_LOWER_IL_INJECTED);
+  bool get isInjected => 0 != (flags & LLKHF_INJECTED);
+  bool get isAltDown => 0 != (flags & LLKHF_ALTDOWN);
+  bool get isReleased => 0 != (flags & LLKHF_UP);
 
   String? get vkName => KeyboardEvent.virtualKeyCode2StringMap?[vkCode]?[0];
 
@@ -71,7 +85,7 @@ class KeyEvent {
       name = map[vkCode]?[0];
     }
     name ??= '<Unknow Key $vkCode>';
-    sb.write('KeyEvent ${isKeyUP ? "↑" : "↓"}$name');
+    sb.write('KeyEvent ${toBinary(flags)} ${isKeyUP ? "↑" : "↓"}$name');
     return sb.toString();
   }
 }
@@ -79,7 +93,7 @@ class KeyEvent {
 typedef Listener = void Function(KeyEvent keyEvent);
 typedef CancelListening = void Function();
 
-var log = Logger();
+Logger log = Logger();
 
 class KeyBoardState {
   Set<int> state = <int>{};
@@ -90,7 +104,7 @@ class KeyBoardState {
       var sb = StringBuffer();
       bool isFirst = true;
       sb.write('[');
-      for (var key in state) {
+      for (final key in state) {
         if (isFirst) {
           isFirst = false;
         } else {
@@ -109,8 +123,7 @@ class KeyBoardState {
 
 class KeyboardEvent {
   static const MethodChannel _channel = MethodChannel('keyboard_event');
-  static const EventChannel _eventChannel =
-      EventChannel("keyboard_event/event");
+  static const EventChannel _eventChannel = EventChannel('keyboard_event/event');
   KeyBoardState state = KeyBoardState();
   OnLogCallback? onLog;
 
@@ -145,8 +158,7 @@ class KeyboardEvent {
   static Map<String, int>? virtualKeyString2CodeMap;
 
   static Future<Map<String, int>> get _getVirtualKeyString2CodeMap async {
-    final Map<String, int> virtualKeyMap = Map<String, int>.from(
-        await _channel.invokeMethod('getVirtualKeyMap', 0));
+    final Map<String, int> virtualKeyMap = Map<String, int>.from(await _channel.invokeMethod('getVirtualKeyMap', 0));
     return virtualKeyMap;
   }
 
@@ -167,8 +179,8 @@ class KeyboardEvent {
 
   static Future<Map<int, List<String>>> get _getVirtualKeyCode2StringMap async {
     Map<int, List<String>> ret = {};
-    final Map<int, List<dynamic>> virtualKeyMap = Map<int, List<dynamic>>.from(
-        await _channel.invokeMethod('getVirtualKeyMap', 1));
+    final Map<int, List<dynamic>> virtualKeyMap =
+        Map<int, List<dynamic>>.from(await _channel.invokeMethod('getVirtualKeyMap', 1));
     virtualKeyMap.forEach((key, value) {
       ret[key] = List<String>.from(value);
     });
@@ -213,10 +225,9 @@ class KeyboardEvent {
 
   int nextListenerId = 1;
   CancelListening? _cancelListening;
-  startListening(Listener listener) async {
-    var subscription =
-        _eventChannel.receiveBroadcastStream(nextListenerId++).listen(//listener
-            (dynamic msg) {
+  Future<void> startListening(Listener listener) async {
+    var subscription = _eventChannel.receiveBroadcastStream(nextListenerId++).listen(//listener
+        (dynamic msg) {
       var list = List<int>.from(msg);
       var keyEvent = KeyEvent(list);
       if (keyEvent.isKeyDown) {
@@ -230,19 +241,19 @@ class KeyboardEvent {
       }
       listener(keyEvent);
     }, cancelOnError: true);
-    debugPrint("keyboard_event/event startListening");
+    debugPrint('keyboard_event/event startListening');
     _cancelListening = () {
       subscription.cancel();
-      debugPrint("keyboard_event/event canceled");
+      debugPrint('keyboard_event/event canceled');
     };
   }
 
-  cancelListening() async {
+  Future<void> cancelListening() async {
     if (_cancelListening != null) {
       _cancelListening!();
       _cancelListening = null;
     } else {
-      debugPrint("keyboard_event/event No Need");
+      debugPrint('keyboard_event/event No Need');
     }
   }
 }

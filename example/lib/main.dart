@@ -116,11 +116,24 @@ class _MyAppState extends State<MyApp> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           ConstrainedBox(
-                            constraints: const BoxConstraints.tightFor(width: 200),
-                            child: Text(
-                              "监听到的键盘事件：$eventNum ${keyboardEvent.state.toString()}\n${_event.join('\n')}",
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 20,
+                            constraints: const BoxConstraints.tightFor(width: 260),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("监听到的键盘事件${_event.length}: ${keyboardEvent.state.toString()}"),
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    setState(() => _event.clear());
+                                  },
+                                  icon: const Icon(Icons.delete),
+                                  label: const Text('Clear'),
+                                ),
+                                Text(
+                                  _event.join('\n'),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 20,
+                                ),
+                              ],
                             ),
                           ),
                           if (KeyboardEvent.virtualKeyString2CodeMap != null)
@@ -133,19 +146,16 @@ class _MyAppState extends State<MyApp> {
                                 1: FixedColumnWidth(40),
                               },
                               children: [
-                                for (var item in KeyboardEvent
-                                    .virtualKeyString2CodeMap!.entries)
+                                for (var item in KeyboardEvent.virtualKeyString2CodeMap!.entries)
                                   TableRow(
                                     key: ValueKey(item.key),
                                     children: [
                                       Padding(
-                                        padding:
-                                            const EdgeInsets.symmetric(horizontal: 5),
+                                        padding: const EdgeInsets.symmetric(horizontal: 5),
                                         child: Text(item.key),
                                       ),
                                       Padding(
-                                        padding:
-                                            const EdgeInsets.symmetric(horizontal: 5),
+                                        padding: const EdgeInsets.symmetric(horizontal: 5),
                                         child: Text(item.value.toString()),
                                       ),
                                     ],
@@ -166,25 +176,18 @@ class _MyAppState extends State<MyApp> {
                                 1: FixedColumnWidth(150),
                               },
                               children: [
-                                for (var item in KeyboardEvent
-                                    .virtualKeyCode2StringMap!.keys
-                                    .toList()
-                                      ..sort())
+                                for (var item in KeyboardEvent.virtualKeyCode2StringMap!.keys.toList()..sort())
                                   TableRow(
                                     key: ValueKey(item),
                                     children: [
                                       Padding(
-                                        padding:
-                                            const EdgeInsets.symmetric(horizontal: 5),
+                                        padding: const EdgeInsets.symmetric(horizontal: 5),
                                         child: Text(item.toString()),
                                       ),
                                       Padding(
-                                        padding:
-                                            const EdgeInsets.symmetric(horizontal: 5),
-                                        child: Text(KeyboardEvent
-                                            .virtualKeyCode2StringMap![item]!
-                                            .join(', \n')
-                                            .toString()),
+                                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                                        child: Text(
+                                            KeyboardEvent.virtualKeyCode2StringMap![item]!.join(', \n').toString()),
                                       ),
                                     ],
                                   )

@@ -1,4 +1,7 @@
 ## 0.3.2
+- fix [issues/3](https://github.com/Krysl/keyboard_event/issues/3) by detect `LLKHF_UP` bit in `flags` of `KBDLLHOOKSTRUCT` structure 
+
+## 0.3.2
 - fix `KEYEVENT_DEBUG` enabled build problem when user use pub instead of a git repo
 
 ## 0.3.1

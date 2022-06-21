@@ -123,7 +123,7 @@ inline int wp2keyMsg(WPARAM wp) {
       keyMsg = 3;
       break;
     default:
-      keyMsg = 3;
+      keyMsg = -1;
       break;
   }
   return keyMsg;
