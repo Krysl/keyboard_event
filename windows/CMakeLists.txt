@@ -108,8 +108,9 @@ set(TIMESTAMP_H timestamp.h)
 add_custom_target(
   ${TIMESTAMP_H}
   COMMAND cmd /C echo ${PROJECT_SOURCE_DIR}
-  COMMAND cmd /C timestamp.bat .
-  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+  COMMAND cmd /C chcp 65001 && timestamp.bat .
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  )
 add_dependencies(${PLUGIN_NAME} ${TIMESTAMP_H})
 
 target_compile_options(${PLUGIN_NAME} PRIVATE /utf-8 /std:c++latest /bigobj)

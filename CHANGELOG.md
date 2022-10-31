@@ -1,3 +1,6 @@
+## 0.3.4
+- fix [issues/4 "timestamp.h error C2220"](https://github.com/Krysl/keyboard_event/issues/4) 
+
 ## 0.3.2
 - fix [issues/3](https://github.com/Krysl/keyboard_event/issues/3) by detect `LLKHF_UP` bit in `flags` of `KBDLLHOOKSTRUCT` structure 
 
