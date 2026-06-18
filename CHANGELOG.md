@@ -19,7 +19,7 @@
 - remove async get functions `virtualKeyString2CodeMap` & 
 `virtualKeyCode2StringMap`, the virtual-key map will init 
 in the static fun `init()` of `class KeyboardEvent`
-- add isLeter, isNumber
+- add isLetter, isNumber
 
 ## 0.2.0-0
 - Migrate example to null-safety;

@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-import 'package:logger/logger.dart';
-
 import 'flags.dart';
 
 const String _kOnLogCallbackMethod = 'onLog';
@@ -73,7 +71,7 @@ class KeyEvent {
 
   String? get vkName => KeyboardEvent.virtualKeyCode2StringMap?[vkCode]?[0];
 
-  bool? get isLeter => KeyboardEvent.isLeter(vkCode);
+  bool? get isLetter => KeyboardEvent.isLetter(vkCode);
   bool? get isNumber => KeyboardEvent.isNumber(vkCode);
 
   @override
@@ -92,8 +90,6 @@ class KeyEvent {
 
 typedef Listener = void Function(KeyEvent keyEvent);
 typedef CancelListening = void Function();
-
-Logger log = Logger();
 
 class KeyBoardState {
   Set<int> state = <int>{};
@@ -187,7 +183,7 @@ class KeyboardEvent {
     return ret;
   }
 
-  static bool? isLeter(int vk) {
+  static bool? isLetter(int vk) {
     if (KeyboardEvent.virtualKeyCode2StringMap != null) {
       var A = KeyboardEvent.virtualKeyString2CodeMap!['A'];
       var Z = KeyboardEvent.virtualKeyString2CodeMap!['Z'];
